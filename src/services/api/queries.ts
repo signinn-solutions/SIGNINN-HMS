@@ -226,9 +226,8 @@ export function useReservationsQuery(propertyId?: string | null) {
             },
           };
         });
-      } catch {
-        const all = mockServices.getInitialData().reservations;
-        return propertyId ? all.filter((r) => r.propertyId === propertyId) : all;
+      } catch (error) {
+        throw error;
       }
     },
   });
@@ -400,11 +399,11 @@ export function useStaffMembersQuery() {
   return useQuery({
     queryKey: QUERY_KEYS.staff(currentTenantId),
     queryFn: async () => {
-      try {
-        return await apiRequest<StaffMember[]>('/api/staff-audit/staff');
-      } catch {
-        return mockServices.getInitialData().staff || [];
-      }
+      const staff = await apiRequest<any[]>('/api/staff-audit/staff');
+      return staff.map((member) => ({
+        ...member,
+        assignedPropertyId: member.property_id,
+      })) as StaffMember[];
     },
   });
 }
@@ -433,14 +432,43 @@ export function useCreateReservationMutation() {
 
   return useMutation({
     mutationFn: async (reservationData: any) => {
-      try {
-        return await apiRequest<Reservation>('/api/reservations', {
-          method: 'POST',
-          body: JSON.stringify(reservationData),
-        });
-      } catch {
-        return await mockServices.createReservation(reservationData);
-      }
+      const guest = reservationData.guest;
+      const saved = await apiRequest<any>('/api/reservations', {
+        method: 'POST',
+        body: JSON.stringify({
+          property_id: reservationData.propertyId || useAppStore.getState().currentPropertyId,
+          guest_id: reservationData.guestId,
+          guest: guest && {
+            first_name: guest.firstName,
+            last_name: guest.lastName,
+            email: guest.email,
+            phone: guest.phone,
+            id_type: guest.idType,
+            id_number: guest.idNumber,
+            nationality: guest.nationality,
+            vip_status: guest.vipStatus,
+            preferences: guest.preferences,
+            notes: guest.notes,
+          },
+          room_id: reservationData.roomId,
+          room_number: reservationData.roomNumber,
+          room_type_id: reservationData.roomTypeId,
+          room_type_name: reservationData.roomTypeName,
+          check_in_date: reservationData.checkInDate,
+          check_out_date: reservationData.checkOutDate,
+          nights: reservationData.nights,
+          adults: reservationData.adults,
+          children: reservationData.children,
+          booking_source: reservationData.bookingSource,
+          nightly_rate: reservationData.nightlyRate,
+          total_amount: reservationData.totalAmount,
+          paid_amount: reservationData.paidAmount,
+          rate_plan_code: reservationData.ratePlanCode,
+          special_requests: reservationData.specialRequests,
+          status: reservationData.status,
+        }),
+      });
+      return { ...saved, refCode: saved.ref_code, propertyId: saved.property_id } as Reservation;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
@@ -1206,6 +1234,24 @@ export function useUpdateStaffStatusMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
     },
+  });
+}
+
+export function useUpdateStaffMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ staffId, changes }: { staffId: string; changes: Partial<StaffMember> }) => {
+      return apiRequest<StaffMember>(`/api/staff-audit/staff/${staffId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          name: changes.name,
+          email: changes.email,
+          phone: changes.phone,
+          role: changes.role,
+        }),
+      });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['staff'] }),
   });
 }
 

@@ -139,7 +139,7 @@ export const AvailabilityView: React.FC<AvailabilityViewProps> = ({ roomTypes, r
             </h1>
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Aiosell Live Sync
+              {aiosellConfig?.configured ? 'Aiosell configured' : 'Aiosell setup required'}
             </span>
           </div>
           <p className="text-xs text-gray-500 mt-1">

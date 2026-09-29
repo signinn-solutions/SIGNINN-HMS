@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { TrendingUp, Calendar, DollarSign, Percent, BarChart3 } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatters';
+import { Reservation } from '../../types';
 
 export type TimeRange = '7D' | '30D' | '90D';
 export type MetricType = 'revenue' | 'occupancy' | 'revpar';
@@ -15,36 +16,30 @@ interface DataPoint {
   otaShare: number;
 }
 
-const MOCK_SERIES: Record<TimeRange, DataPoint[]> = {
-  '7D': [
-    { date: '2026-09-10', label: 'Thu, Sep 10', revenue: 72000, occupancy: 76, revpar: 3450, directShare: 42, otaShare: 58 },
-    { date: '2026-09-11', label: 'Fri, Sep 11', revenue: 98500, occupancy: 92, revpar: 4800, directShare: 38, otaShare: 62 },
-    { date: '2026-09-12', label: 'Sat, Sep 12', revenue: 114000, occupancy: 96, revpar: 5400, directShare: 45, otaShare: 55 },
-    { date: '2026-09-13', label: 'Sun, Sep 13', revenue: 89000, occupancy: 82, revpar: 4200, directShare: 40, otaShare: 60 },
-    { date: '2026-09-14', label: 'Mon, Sep 14', revenue: 64000, occupancy: 68, revpar: 3100, directShare: 50, otaShare: 50 },
-    { date: '2026-09-15', label: 'Tue, Sep 15', revenue: 78500, occupancy: 78, revpar: 3800, directShare: 48, otaShare: 52 },
-    { date: '2026-09-16', label: 'Wed, Sep 16 (Today)', revenue: 84500, occupancy: 84, revpar: 3977, directShare: 44, otaShare: 56 },
-  ],
-  '30D': [
-    { date: 'Week 1', label: 'Aug 18 - Aug 24', revenue: 490000, occupancy: 74, revpar: 3300, directShare: 35, otaShare: 65 },
-    { date: 'Week 2', label: 'Aug 25 - Aug 31', revenue: 535000, occupancy: 81, revpar: 3650, directShare: 40, otaShare: 60 },
-    { date: 'Week 3', label: 'Sep 01 - Sep 07', revenue: 582000, occupancy: 86, revpar: 4100, directShare: 43, otaShare: 57 },
-    { date: 'Week 4', label: 'Sep 08 - Sep 14', revenue: 610000, occupancy: 88, revpar: 4350, directShare: 46, otaShare: 54 },
-    { date: 'Current', label: 'Sep 15 - Sep 16', revenue: 163000, occupancy: 84, revpar: 3977, directShare: 45, otaShare: 55 },
-  ],
-  '90D': [
-    { date: 'Month 1', label: 'July 2026', revenue: 2150000, occupancy: 72, revpar: 3200, directShare: 34, otaShare: 66 },
-    { date: 'Month 2', label: 'August 2026', revenue: 2480000, occupancy: 80, revpar: 3750, directShare: 39, otaShare: 61 },
-    { date: 'Month 3', label: 'September 2026 (MTD)', revenue: 1380000, occupancy: 84, revpar: 4100, directShare: 44, otaShare: 56 },
-  ],
-};
-
-export const PerformanceChart: React.FC = () => {
+export const PerformanceChart: React.FC<{ reservations: Reservation[]; roomCount: number }> = ({ reservations, roomCount }) => {
   const [timeRange, setTimeRange] = useState<TimeRange>('7D');
   const [metric, setMetric] = useState<MetricType>('revenue');
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
-  const data = MOCK_SERIES[timeRange];
+  const days = timeRange === '7D' ? 7 : timeRange === '30D' ? 30 : 90;
+  const data: DataPoint[] = Array.from({ length: days }, (_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (days - index - 1));
+    const dateKey = date.toISOString().slice(0, 10);
+    const active = reservations.filter((r) => r.status !== 'Cancelled' && r.checkInDate <= dateKey && r.checkOutDate > dateKey);
+    const revenue = active.reduce((sum, r) => sum + (r.nightlyRate || r.totalAmount / Math.max(1, r.nights)), 0);
+    const directRevenue = active.filter((r) => r.bookingSource === 'Direct Website' || r.bookingSource === 'Direct Front Desk' || r.bookingSource === 'Walk-in').reduce((sum, r) => sum + (r.nightlyRate || r.totalAmount / Math.max(1, r.nights)), 0);
+    const directShare = revenue > 0 ? Math.round((directRevenue / revenue) * 100) : 0;
+    return {
+      date: dateKey,
+      label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      revenue: Math.round(revenue),
+      occupancy: roomCount > 0 ? Math.round((active.length / roomCount) * 100) : 0,
+      revpar: roomCount > 0 ? Math.round(revenue / roomCount) : 0,
+      directShare,
+      otaShare: revenue > 0 ? 100 - directShare : 0,
+    };
+  });
   const activePoint = hoverIndex !== null ? data[hoverIndex] : data[data.length - 1];
 
   // Calculate SVG coordinates
@@ -99,9 +94,6 @@ export const PerformanceChart: React.FC = () => {
             </span>
             <span className="text-xs text-slate-500 font-medium">
               {activePoint.label}
-            </span>
-            <span className="inline-flex items-center text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-md">
-              <TrendingUp className="w-3.5 h-3.5 mr-1 stroke-[2.5]" /> +14.2%
             </span>
           </div>
         </div>
@@ -261,12 +253,10 @@ export const PerformanceChart: React.FC = () => {
       {/* Axis Labels & Channel Breakdown Pill */}
       <div className="flex items-center justify-between text-xs text-gray-500 pt-1 border-t border-gray-100">
         <div className="flex items-center gap-6">
-          {data.map((d, i) => (
+          {data.filter((_, i) => i % Math.ceil(data.length / 7) === 0 || i === data.length - 1).map((d) => (
             <span
-              key={i}
-              className={`text-[11px] ${
-                hoverIndex === i ? 'text-indigo-600 font-bold' : 'text-gray-400'
-              }`}
+              key={d.date}
+              className="text-[11px] text-gray-400"
             >
               {d.date}
             </span>

@@ -31,8 +31,8 @@ export const NewReservationModal: React.FC<NewReservationModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form states
-  const [checkInDate, setCheckInDate] = useState(initialDate || '2026-09-16');
-  const [checkOutDate, setCheckOutDate] = useState('2026-09-18');
+  const [checkInDate, setCheckInDate] = useState(initialDate || new Date().toISOString().slice(0, 10));
+  const [checkOutDate, setCheckOutDate] = useState(() => new Date(Date.now() + 86400000).toISOString().slice(0, 10));
   const [roomTypeId, setRoomTypeId] = useState(roomTypes[0]?.id || 'rt-1');
   const [selectedRoomId, setSelectedRoomId] = useState(initialRoomId || '');
   const [adults, setAdults] = useState(2);
@@ -74,6 +74,10 @@ export const NewReservationModal: React.FC<NewReservationModalProps> = ({
   const totalAmount = baseRate * nights + mealAddon + transferAddon + extraBedAddon;
 
   const handleSubmit = async () => {
+    if (checkOutDate <= checkInDate) {
+      showToast({ title: 'Invalid stay dates', description: 'Check-out must be after check-in.', type: 'error' });
+      return;
+    }
     if (!firstName || !lastName || !phone) {
       showToast({
         title: 'Missing Required Fields',

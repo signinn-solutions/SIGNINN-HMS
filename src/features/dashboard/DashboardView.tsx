@@ -99,9 +99,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const checkedInArrivals = arrivalsToday.filter((r) => r.status === 'Checked In').length;
   const pendingArrivals = arrivalsToday.length - checkedInArrivals;
 
-  const departuresToday = reservations.filter((r) => r.checkOutDate === today && r.status !== 'Checked Out');
+  const departuresToday = reservations.filter((r) => r.checkOutDate === today && r.status !== 'Cancelled');
   const completedDepartures = reservations.filter((r) => r.checkOutDate === today && r.status === 'Checked Out').length;
-  const pendingDepartures = departuresToday.length;
+  const pendingDepartures = departuresToday.length - completedDepartures;
 
   const inHouseReservations = reservations.filter((r) => r.status === 'Checked In');
 
@@ -117,13 +117,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     .reduce((acc, r) => acc + r.balanceAmount, 0);
 
   const unassignedArrivals = arrivalsToday.filter((r) => !r.roomId);
-  const totalGuestsCount = inHouseReservations.reduce((sum, r) => sum + (r.adults || 1) + (r.children || 0), 0) || (inHouseReservations.length * 2);
+  const totalGuestsCount = inHouseReservations.reduce((sum, r) => sum + (r.adults || 1) + (r.children || 0), 0);
 
   // Financial calculations
-  const totalCollections = payments.reduce((acc, p) => acc + p.amount, 0);
-  const realizedRevenue = inHouseReservations.reduce((sum, r) => sum + (r.paidAmount || (r.totalAmount - r.balanceAmount) || 0), 0) || (totalCollections > 0 ? totalCollections : 84500);
-  const adr = occupiedRooms > 0 ? Math.round(realizedRevenue / occupiedRooms) : 4850;
-  const revpar = totalRooms > 0 ? Math.round(realizedRevenue / totalRooms) : 3880;
+  const propertyReservationIds = new Set(reservations.map((r) => r.id));
+  const propertyPayments = payments.filter((p) => propertyReservationIds.has(p.reservationId) && p.status === 'Success');
+  const totalCollections = propertyPayments.reduce((acc, p) => acc + p.amount, 0);
+  const todayCollections = propertyPayments.filter((p) => p.date?.slice(0, 10) === today).reduce((acc, p) => acc + p.amount, 0);
+  const activeRoomNights = reservations.filter((r) => r.status !== 'Cancelled' && r.checkInDate <= today && r.checkOutDate > today);
+  const realizedRevenue = activeRoomNights.reduce((sum, r) => sum + (r.nightlyRate || r.totalAmount / Math.max(1, r.nights)), 0);
+  const adr = activeRoomNights.length > 0 ? Math.round(realizedRevenue / activeRoomNights.length) : 0;
+  const revpar = totalRooms > 0 ? Math.round(realizedRevenue / totalRooms) : 0;
+  const pastSevenDays = Array.from({ length: 7 }, (_, index) => {
+    const day = new Date();
+    day.setDate(day.getDate() - (6 - index));
+    const key = day.toISOString().slice(0, 10);
+    const staying = reservations.filter((r) => r.status !== 'Cancelled' && r.checkInDate <= key && r.checkOutDate > key);
+    return {
+      revenue: Math.round(staying.reduce((sum, r) => sum + (r.nightlyRate || r.totalAmount / Math.max(1, r.nights)), 0)),
+      occupancy: totalRooms > 0 ? Math.round(staying.length / totalRooms * 100) : 0,
+      guests: staying.reduce((sum, r) => sum + r.adults + r.children, 0),
+    };
+  });
 
   const pendingTasksCount = unassignedArrivals.length + dirtyRooms + maintenanceRooms;
 
@@ -630,9 +645,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   // 4. FINANCE & ACCOUNTS DASHBOARD
   // -------------------------------------------------------------
   if (isFinance) {
-    const upiTotal = payments.filter((p) => p.method === 'UPI').reduce((acc, p) => acc + p.amount, 0);
-    const cardTotal = payments.filter((p) => p.method === 'Credit Card' || p.method === 'Card').reduce((acc, p) => acc + p.amount, 0);
-    const cashTotal = payments.filter((p) => p.method === 'Cash').reduce((acc, p) => acc + p.amount, 0);
+    const upiTotal = propertyPayments.filter((p) => p.method === 'UPI').reduce((acc, p) => acc + p.amount, 0);
+    const cardTotal = propertyPayments.filter((p) => p.method === 'Credit Card' || p.method === 'Card').reduce((acc, p) => acc + p.amount, 0);
+    const cashTotal = propertyPayments.filter((p) => p.method === 'Cash').reduce((acc, p) => acc + p.amount, 0);
 
     return (
       <div className="space-y-6">
@@ -684,10 +699,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* 4 Finance KPI Widgets */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatWidget
-            title="Total Realized Revenue"
+            title="Room Revenue Today"
             value={formatCurrency(realizedRevenue)}
-            subtitle="Today's occupied & F&B turnover"
-            trend={{ value: '+14.2%', isPositive: true, label: 'vs yesterday' }}
+            subtitle="Tonight's booked room rates"
+            trend={{ value: formatCurrency(todayCollections), isPositive: true, label: 'collected today' }}
             icon={<DollarSign className="w-5 h-5 text-emerald-600" />}
             accentColor="emerald"
             onClick={() => onNavigate('reports')}
@@ -704,8 +719,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <StatWidget
             title="Tax Invoices (GST)"
             value={invoices.length}
-            subtitle="Generated compliant invoices"
-            trend={{ value: 'SAC 996311', isPositive: true, label: 'compliant' }}
+            subtitle="Generated invoices"
+            trend={{ value: `${invoices.length} issued`, isPositive: true, label: 'records' }}
             icon={<FileText className="w-5 h-5 text-indigo-600" />}
             accentColor="indigo"
             onClick={() => onNavigate('invoices')}
@@ -788,7 +803,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-                {todayFormatted} • ADR, RevPAR, 26-partner Aiosell distribution, rate parity & surge pricing.
+                {todayFormatted} • ADR, RevPAR, channel settings and pricing overview.
               </p>
             </div>
 
@@ -824,7 +839,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             title="Average Daily Rate (ADR)"
             value={formatCurrency(adr)}
             subtitle="Realized rate per occupied room"
-            trend={{ value: '+8.4%', isPositive: true, label: 'above target' }}
+            trend={{ value: `${activeRoomNights.length} room nights`, isPositive: true, label: 'today' }}
             icon={<TrendingUp className="w-5 h-5 text-purple-600" />}
             accentColor="indigo"
             onClick={() => onNavigate('rates')}
@@ -833,7 +848,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             title="RevPAR (Available Room)"
             value={formatCurrency(revpar)}
             subtitle="Yield efficiency index"
-            trend={{ value: '+11.2%', isPositive: true, label: 'pace' }}
+            trend={{ value: `${totalRooms} rooms`, isPositive: true, label: 'available' }}
             icon={<DollarSign className="w-5 h-5 text-indigo-600" />}
             accentColor="indigo"
             onClick={() => onNavigate('reports')}
@@ -848,10 +863,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             onClick={() => onNavigate('rooms')}
           />
           <StatWidget
-            title="Connected Aiosell Feeds"
+            title="Enabled PMS Channels"
             value={connectedChannels}
-            subtitle="Active OTA & BE distribution"
-            trend={{ value: '26 Configured', isPositive: true, label: 'channels' }}
+            subtitle="Connection status requires Aiosell verification"
+            trend={{ value: `${channels.length} listed`, isPositive: true, label: 'channels' }}
             icon={<Radio className="w-5 h-5 text-emerald-600" />}
             accentColor="emerald"
             onClick={() => onNavigate('channels')}
@@ -859,12 +874,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Performance Yield Chart */}
-        <PerformanceChart />
+        <PerformanceChart reservations={reservations} roomCount={totalRooms} />
 
         {/* Top OTA Feeds Quick Status */}
         <div className="bg-white/95 rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/80 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900">Aiosell Channel Feed Status (Top Partners)</h3>
+            <h3 className="text-sm font-bold text-slate-900">PMS Channel Settings (Top Partners)</h3>
             <button onClick={() => onNavigate('channels')} className="text-xs text-purple-600 hover:text-purple-800 font-semibold cursor-pointer">
               All 26 Integrations →
             </button>
@@ -950,31 +965,31 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <StatWidget
           title="Total Revenue (Today)"
           value={formatCurrency(realizedRevenue)}
-          subtitle="Realized room & F&B turnover"
-          trend={{ value: '+14.8%', isPositive: true, label: 'vs last week' }}
+            subtitle="Tonight's booked room rates"
+          trend={{ value: formatCurrency(todayCollections), isPositive: true, label: 'collected today' }}
           icon={<DollarSign className="w-5 h-5 text-indigo-600" />}
           accentColor="indigo"
-          sparkline={[58, 62, 74, 69, 81, 78, 85]}
+          sparkline={pastSevenDays.map((day) => day.revenue)}
           onClick={() => onNavigate('reports')}
         />
         <StatWidget
           title="Occupancy Rate"
           value={`${occupancyPercentage}%`}
           subtitle={`${occupiedRooms} of ${totalRooms} rooms occupied`}
-          trend={{ value: '+5.2%', isPositive: true, label: 'above compset' }}
+          trend={{ value: `${occupiedRooms} occupied`, isPositive: true, label: 'today' }}
           icon={<BedDouble className="w-5 h-5 text-blue-600" />}
           accentColor="blue"
-          sparkline={[70, 72, 78, 75, 80, 82, 84]}
+          sparkline={pastSevenDays.map((day) => day.occupancy)}
           onClick={() => onNavigate('rooms')}
         />
         <StatWidget
           title="Active In-House Guests"
           value={totalGuestsCount}
           subtitle={`${inHouseReservations.length} active registered folios`}
-          trend={{ value: '+8.4%', isPositive: true, label: 'high season' }}
+          trend={{ value: `${inHouseReservations.length} stays`, isPositive: true, label: 'in house' }}
           icon={<Users className="w-5 h-5 text-emerald-600" />}
           accentColor="emerald"
-          sparkline={[38, 44, 49, 46, 54, 59, 64]}
+          sparkline={pastSevenDays.map((day) => day.guests)}
           onClick={() => onNavigate('guests')}
         />
         <StatWidget
@@ -984,13 +999,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           trend={{ value: `${dirtyRooms} dirty, ${maintenanceRooms} Mnt`, isPositive: pendingTasksCount <= 3, label: 'pending' }}
           icon={<AlertTriangle className="w-5 h-5 text-amber-600" />}
           accentColor="amber"
-          sparkline={[12, 11, 10, 9, 8, 8, Math.max(1, pendingTasksCount)]}
           onClick={() => onNavigate('frontdesk')}
         />
       </div>
 
       {/* Central Data Visualization Area */}
-      <PerformanceChart />
+      <PerformanceChart reservations={reservations} roomCount={totalRooms} />
 
       {/* Secondary Operational Quick-Status Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
@@ -1094,11 +1108,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-900">Aiosell 2-Way Channel Sync</span>
+                <span className="text-xs font-bold text-slate-900">Check Aiosell Channel Mapping</span>
                 <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-slate-700 transition-colors" />
               </div>
               <p className="text-xs text-slate-600 mt-1 leading-snug">
-                Live rates & inventory distribution active across 26 connected OTA channels.
+                Verify the Aiosell property mapping before claiming live rate or inventory distribution.
               </p>
             </div>
           </div>
@@ -1264,7 +1278,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="bg-white/95 rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-[0_1px_3px_rgba(15,23,42,0.03)]">
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">Channel Distribution</h4>
-            <span className="text-[11px] text-slate-400 font-medium">Aiosell Feeds</span>
+            <span className="text-[11px] text-slate-400 font-medium">PMS records</span>
           </div>
 
           <div className="space-y-3">
@@ -1319,10 +1333,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
-          <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>Average turnaround time:</span>
-            <span className="font-bold text-slate-900">32 minutes</span>
-          </div>
         </div>
 
         {/* Financial Highlights */}

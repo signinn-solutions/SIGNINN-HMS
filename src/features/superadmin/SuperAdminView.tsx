@@ -660,8 +660,8 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
                 Centralized gateway connections routing rates, availability, and bookings between global channels and all hotel tenants.
               </p>
             </div>
-            <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Telemetry unavailable
+            <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1.5">
+              Telemetry unavailable
             </span>
           </div>
 

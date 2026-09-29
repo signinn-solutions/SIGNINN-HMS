@@ -19,17 +19,23 @@ import { useToast } from '../../components/ui/Toast';
 
 export interface StaffRolesViewProps {
   staffList: StaffMember[];
-  onAddStaff: (staff: Omit<StaffMember, 'id'>) => void;
-  onUpdateStaffStatus: (staffId: string, status: StaffMember['status']) => void;
+  propertyId: string;
+  onAddStaff: (staff: Omit<StaffMember, 'id'>) => Promise<void>;
+  onUpdateStaff: (staffId: string, changes: Partial<StaffMember>) => Promise<void>;
+  onUpdateStaffStatus: (staffId: string, status: StaffMember['status']) => Promise<void>;
 }
 
 export const StaffRolesView: React.FC<StaffRolesViewProps> = ({
   staffList,
+  propertyId,
   onAddStaff,
+  onUpdateStaff,
   onUpdateStaffStatus,
 }) => {
   const { showToast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [showMatrix, setShowMatrix] = useState(false);
 
   // Form states
@@ -37,30 +43,45 @@ export const StaffRolesView: React.FC<StaffRolesViewProps> = ({
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('+91 ');
   const [role, setRole] = useState<UserRole>('Front Desk Agent');
-  const [pin, setPin] = useState('1234');
-
-  const handleCreate = () => {
+  const handleSave = async () => {
     if (!name || !email) {
       showToast({ title: 'Missing Info', description: 'Name and email are required.', type: 'error' });
       return;
     }
-    onAddStaff({
-      name,
-      email,
-      phone,
-      role,
-      assignedPropertyId: 'prop-1',
-      status: 'Active',
-      pinCode: pin,
-    });
-    showToast({
-      title: 'Staff Member Enrolled',
-      description: `${name} added with ${role} permissions.`,
-      type: 'success',
-    });
-    setIsModalOpen(false);
+    setIsSaving(true);
+    try {
+      if (editingStaff) {
+        await onUpdateStaff(editingStaff.id, { name, email, phone, role });
+      } else {
+        await onAddStaff({ name, email, phone, role, assignedPropertyId: propertyId, status: 'Active' });
+      }
+      setIsModalOpen(false);
+      setEditingStaff(null);
+      setName('');
+      setEmail('');
+    } catch (error) {
+      showToast({ title: 'Staff save failed', description: error instanceof Error ? error.message : 'Please try again.', type: 'error' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const openEdit = (staff: StaffMember) => {
+    setEditingStaff(staff);
+    setName(staff.name);
+    setEmail(staff.email);
+    setPhone(staff.phone);
+    setRole(staff.role);
+    setIsModalOpen(true);
+  };
+
+  const openAdd = () => {
+    setEditingStaff(null);
     setName('');
     setEmail('');
+    setPhone('');
+    setRole('Front Desk Agent');
+    setIsModalOpen(true);
   };
 
   return (
@@ -92,7 +113,7 @@ export const StaffRolesView: React.FC<StaffRolesViewProps> = ({
           <Button
             variant="primary"
             size="sm"
-            onClick={() => setIsModalOpen(true)}
+            onClick={openAdd}
             leftIcon={<Plus className="w-3.5 h-3.5" />}
           >
             Add Staff Member
@@ -169,17 +190,17 @@ export const StaffRolesView: React.FC<StaffRolesViewProps> = ({
                   <Badge variant="status" status={s.status} size="sm" dot />
                 </td>
                 <td className="p-3 text-right">
+                  <Button size="xs" variant="ghost" onClick={() => openEdit(s)}>Edit</Button>
                   <Button
                     size="xs"
                     variant="ghost"
-                    onClick={() => {
+                    onClick={async () => {
                       const newStatus = s.status === 'Active' ? 'Inactive' : 'Active';
-                      onUpdateStaffStatus(s.id, newStatus);
-                      showToast({
-                        title: 'Status Updated',
-                        description: `${s.name} is now ${newStatus}.`,
-                        type: 'info',
-                      });
+                      try {
+                        await onUpdateStaffStatus(s.id, newStatus);
+                      } catch (error) {
+                        showToast({ title: 'Status update failed', description: error instanceof Error ? error.message : 'Please try again.', type: 'error' });
+                      }
                     }}
                   >
                     {s.status === 'Active' ? 'Deactivate' : 'Activate'}
@@ -196,14 +217,14 @@ export const StaffRolesView: React.FC<StaffRolesViewProps> = ({
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         maxWidth="md"
-        title="Add Hotel Team Member"
+        title={editingStaff ? 'Edit Team Member' : 'Add Hotel Team Member'}
         footer={
           <>
             <Button variant="ghost" size="sm" onClick={() => setIsModalOpen(false)}>
               Cancel
             </Button>
-            <Button variant="primary" size="sm" onClick={handleCreate}>
-              Enrol Staff
+            <Button variant="primary" size="sm" onClick={handleSave} disabled={isSaving}>
+              {isSaving ? 'Saving...' : editingStaff ? 'Save Changes' : 'Add Staff'}
             </Button>
           </>
         }
@@ -245,12 +266,6 @@ export const StaffRolesView: React.FC<StaffRolesViewProps> = ({
               ]}
             />
 
-            <Input
-              label="Quick PIN Code"
-              maxLength={4}
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-            />
           </div>
         </div>
       </Modal>

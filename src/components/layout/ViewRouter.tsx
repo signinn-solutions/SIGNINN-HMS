@@ -72,6 +72,7 @@ import {
   useUpdatePropertyMutation,
   useAddStaffMutation,
   useUpdateStaffStatusMutation,
+  useUpdateStaffMutation,
   useRecordDirectPaymentMutation,
 } from '../../services/api/queries';
 
@@ -141,6 +142,7 @@ export const ViewRouter: React.FC = () => {
   const updatePropertyMutation = useUpdatePropertyMutation();
   const addStaffMutation = useAddStaffMutation();
   const updateStaffStatusMutation = useUpdateStaffStatusMutation();
+  const updateStaffMutation = useUpdateStaffMutation();
   const recordDirectPaymentMutation = useRecordDirectPaymentMutation();
 
   const currentTenant = tenants.find((t) => t.id === currentTenantId) || tenants[0];
@@ -583,6 +585,7 @@ export const ViewRouter: React.FC = () => {
       return (
         <StaffRolesView
           staffList={staffList}
+          propertyId={currentProperty?.id || ''}
           onAddStaff={async (newStaff) => {
             await addStaffMutation.mutateAsync({
               ...newStaff,
@@ -601,6 +604,10 @@ export const ViewRouter: React.FC = () => {
               description: `Status changed to ${status}`,
               type: 'info',
             });
+          }}
+          onUpdateStaff={async (staffId, changes) => {
+            await updateStaffMutation.mutateAsync({ staffId, changes });
+            showToast({ title: 'Staff Member Updated', description: 'Changes saved.', type: 'success' });
           }}
         />
       );

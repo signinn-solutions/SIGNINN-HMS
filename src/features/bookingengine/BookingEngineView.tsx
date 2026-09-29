@@ -31,8 +31,8 @@ export const BookingEngineView: React.FC<BookingEngineViewProps> = ({
   const [activeTab, setActiveTab] = useState<'preview' | 'admin'>('preview');
 
   // Booking widget form state
-  const [checkIn, setCheckIn] = useState('2026-09-18');
-  const [checkOut, setCheckOut] = useState('2026-09-20');
+  const [checkIn, setCheckIn] = useState(() => new Date().toISOString().slice(0, 10));
+  const [checkOut, setCheckOut] = useState(() => new Date(Date.now() + 86400000).toISOString().slice(0, 10));
   const [adults, setAdults] = useState(2);
   const [selectedRoomTypeId, setSelectedRoomTypeId] = useState(roomTypes[0]?.id || 'rt-1');
   const [guestName, setGuestName] = useState('Priya Sharma');
@@ -41,15 +41,21 @@ export const BookingEngineView: React.FC<BookingEngineViewProps> = ({
   const [breakfastIncluded, setBreakfastIncluded] = useState(true);
   const [isBooked, setIsBooked] = useState(false);
   const [confirmedRef, setConfirmedRef] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedRoomType = roomTypes.find((rt) => rt.id === selectedRoomTypeId) || roomTypes[0];
-  const nights = 2;
-  const roomCost = selectedRoomType.basePrice * nights;
+  const nights = Math.max(0, Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000));
+  const roomCost = (selectedRoomType?.basePrice || 0) * nights;
   const directDiscount = Math.round(roomCost * 0.1); // 10% direct booking discount incentive
   const mealCost = breakfastIncluded ? 600 * nights * adults : 0;
   const grandTotal = roomCost - directDiscount + mealCost;
 
   const handleBookDirect = async () => {
+    if (!selectedRoomType || !guestName.trim() || !guestPhone.trim() || !guestEmail.trim() || nights < 1 || checkIn < new Date().toISOString().slice(0, 10)) {
+      showToast({ title: 'Check booking details', description: 'Choose a room, future stay dates, and enter guest contact details.', type: 'error' });
+      return;
+    }
+    setIsSubmitting(true);
     try {
       const res = await onCreateDirectBooking({
         guest: {
@@ -76,22 +82,24 @@ export const BookingEngineView: React.FC<BookingEngineViewProps> = ({
         status: 'Confirmed',
         bookingSource: 'Direct Website',
         totalAmount: grandTotal,
-        paidAmount: grandTotal,
+        paidAmount: 0,
         ratePlanCode: 'DIRECT-SAVE10',
       });
       setConfirmedRef(res.refCode);
       setIsBooked(true);
       showToast({
         title: 'Direct Reservation Confirmed!',
-        description: `Reference ${res.refCode}. Instant WhatsApp confirmation dispatched.`,
+        description: `Reference ${res.refCode}. Reservation saved.`,
         type: 'success',
       });
     } catch (e) {
       showToast({
         title: 'Booking Error',
-        description: 'Unable to complete direct reservation.',
+        description: e instanceof Error ? e.message : 'Unable to complete direct reservation.',
         type: 'error',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -301,25 +309,17 @@ export const BookingEngineView: React.FC<BookingEngineViewProps> = ({
                   </div>
                 </div>
 
-                {/* Instant UPI QR Code Box */}
-                <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 flex items-center gap-3">
-                  <div className="w-14 h-14 bg-white p-1 rounded-lg border border-gray-200 flex items-center justify-center shrink-0">
-                    <QrCode className="w-12 h-12 text-gray-900" />
-                  </div>
-                  <div className="text-[11px] text-gray-600">
-                    <strong className="text-gray-900 block">Scan with any UPI App</strong>
-                    GPay, PhonePe, Paytm, or BHIM. Zero payment gateway convenience fees.
-                  </div>
-                </div>
+                <p className="text-xs text-gray-600">Payment can be collected from the reservation folio after booking.</p>
 
                 <Button
                   variant="primary"
                   size="lg"
                   className="w-full"
                   onClick={handleBookDirect}
+                  disabled={isSubmitting}
                   leftIcon={<CheckCircle2 className="w-4 h-4" />}
                 >
-                  Pay {formatCurrency(grandTotal)} & Confirm Stay
+                  {isSubmitting ? 'Saving reservation...' : 'Confirm Reservation'}
                 </Button>
               </div>
             </div>
@@ -331,8 +331,7 @@ export const BookingEngineView: React.FC<BookingEngineViewProps> = ({
               </div>
               <h3 className="text-xl font-bold text-gray-950">Booking Confirmed!</h3>
               <p className="text-xs text-gray-600">
-                Your reservation at APKA INN is locked. A confirmation voucher has been sent to{' '}
-                <strong>{guestEmail}</strong> and WhatsApp at <strong>{guestPhone}</strong>.
+                Your reservation at APKA INN has been saved for <strong>{guestEmail}</strong>.
               </p>
 
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 text-xs text-left space-y-1.5">

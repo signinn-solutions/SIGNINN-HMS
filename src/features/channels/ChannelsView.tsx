@@ -134,8 +134,8 @@ export const ChannelsView: React.FC<ChannelsViewProps> = ({
   const [simResult, setSimResult] = useState<any | null>(null);
 
   const propertyName = currentProperty?.name || "Grand Azure Resort & Spa";
-  const hotelCode = aiosellConfig?.hotelCode || "sandbox-pms";
-  const partnerId = aiosellConfig?.partnerId || "sample-pms";
+  const hotelCode = aiosellConfig?.hotelCode || "";
+  const partnerId = aiosellConfig?.partnerId || "";
   const webhookUrl = `${window.location.protocol}//${window.location.host}/api/channels/aiosell/webhook`;
 
   const copyToClipboard = (text: string, key: string) => {
@@ -362,6 +362,11 @@ export const ChannelsView: React.FC<ChannelsViewProps> = ({
       {!aiosellConfig?.configured && (
         <div role="status" className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           Aiosell is not configured. Set the partner ID, username, password and hotel code on the server before demonstrating a live connection.
+        </div>
+      )}
+      {aiosellConfig?.configured && !aiosellConfig?.webhookConfigured && (
+        <div role="status" className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Outbound Aiosell access is configured. Set AIOSELL_PROPERTY_ID to the matching PMS property before accepting reservation webhooks.
         </div>
       )}
       {/* HEADER SECTION */}
@@ -598,7 +603,7 @@ export const ChannelsView: React.FC<ChannelsViewProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search channel or OTA slug..."
-                className="w-full sm:w-64 pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full sm:w-64 pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus-visible:ring-2 focus-visible:ring-blue-500"
               />
               <Filter className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2" />
             </div>
@@ -1234,7 +1239,7 @@ export const ChannelsView: React.FC<ChannelsViewProps> = ({
                         onChange={(e) => setSimPah(e.target.checked)}
                         className="sr-only peer"
                       />
-                      <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
+                      <div className="w-9 h-5 bg-slate-300 peer-focus-visible:ring-2 peer-focus-visible:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-colors peer-checked:bg-amber-600"></div>
                     </label>
                   </div>
 

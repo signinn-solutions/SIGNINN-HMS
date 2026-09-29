@@ -85,7 +85,7 @@ CHANNELS = [
 
 def seed_50_rooms_yearly():
     print("=" * 70)
-    print("RESETTING DATABASE AND SEEDING 50 ROOMS WITH 1 FULL YEAR OF DATA")
+    print("RESETTING DATABASE AND SEEDING 50 ROOMS WITH SEPTEMBER 21-30 RESERVATIONS")
     print("=" * 70)
 
     # 1. Recreate tables cleanly
@@ -523,19 +523,18 @@ def seed_50_rooms_yearly():
         guests_pool.append(gst)
     db.commit()
 
-    # 8. Generating 1 Full Normal Year of Bookings
-    print("[7/8] Generating 1 full year of continuous bookings across all 50 rooms...")
-    # Today reference
-    TODAY = datetime(2026, 9, 19).date()
-    START_DATE = TODAY - timedelta(days=290)  # ~10 months ago (Nov 2025)
-    END_DATE = TODAY + timedelta(days=70)     # ~2.5 months into future (Nov 2026)
+    # Ten days of linked reservations, ending September 30, 2026.
+    print("[7/8] Generating reservations for September 21-30, 2026...")
+    TODAY = datetime.now().date()
+    START_DATE = datetime(2026, 9, 21).date()
+    END_DATE = datetime(2026, 10, 1).date()  # exclusive
 
     reservations_count = 0
     folios_count = 0
     payments_count = 0
     ota_logs_count = 0
 
-    # For each room, simulate a continuous chain of bookings from START_DATE to END_DATE
+    # For each room, simulate a continuous chain within the seed window.
     random.seed(42)  # Deterministic repeatability
 
     occupied_rooms_today = []
@@ -551,7 +550,8 @@ def seed_50_rooms_yearly():
             # Length of stay: 2 to 4 nights
             nights = random.choice([2, 2, 3, 3, 4, 1, 5])
             check_in = curr_date
-            check_out = curr_date + timedelta(days=nights)
+            check_out = min(curr_date + timedelta(days=nights), END_DATE)
+            nights = (check_out - check_in).days
 
             # Turnaround gap before next booking: 0 to 2 days (average ~75% room occupancy)
             gap = random.choice([0, 0, 1, 1, 2, 3])
@@ -748,10 +748,10 @@ def seed_50_rooms_yearly():
 
     # Ensure 5 vacant rooms have Confirmed Arrivals Today (for front desk check-in workflow)
     vacant_candidates = [r for r in rooms_list if r.id not in [o[0].id for o in occupied_rooms_today]][:5]
-    for rm in vacant_candidates:
+    for rm in vacant_candidates if START_DATE <= TODAY < END_DATE else []:
         rt = room_types_map[rm.room_type_id]
         gst = random.choice(guests_pool)
-        nights = 2
+        nights = min(2, (END_DATE - TODAY).days)
         rate = rt.base_price
         total_amt = rate * nights
         res_id = f"res-arr-{rm.room_number}"
@@ -1086,7 +1086,7 @@ def seed_50_rooms_yearly():
     print(f"Today's Occupied Rooms:  {total_occupied} ({round(total_occupied/50*100, 1)}% current occupancy)")
     print(f"Today's Reserved Rooms:  {total_reserved} (Arriving today)")
     print(f"Today's Vacant Rooms:    {total_vacant}")
-    print(f"Total Yearly Bookings:   {reservations_count}")
+    print(f"Total Seed Bookings:     {reservations_count}")
     print(f"Total Folios Generated:  {folios_count}")
     print(f"Total Payments Logged:   {payments_count}")
     print(f"Total OTA Ingestion Logs:{ota_logs_count}")
