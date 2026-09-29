@@ -52,10 +52,18 @@ export const ReservationBar: React.FC<ReservationBarProps> = ({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       style={style}
-      className={`absolute top-1.5 bottom-1.5 rounded-lg px-2 flex items-center justify-between text-xs font-semibold shadow-xs border cursor-pointer select-none transition-all duration-150 z-10 active:scale-[0.99] ${statusClass} ${className}`}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick?.();
+        }
+      }}
+      className={`absolute inset-y-2 rounded-md px-2 flex items-center gap-1.5 text-xs font-semibold shadow-xs border cursor-pointer select-none overflow-hidden transition-colors duration-150 z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${statusClass} ${className}`}
       title={`${reservation.guest.firstName} ${reservation.guest.lastName} • ${reservation.status} • ${reservation.source}`}
     >
-      <div className="truncate flex items-center gap-1.5 min-w-0 pr-1">
+      <div className="truncate flex flex-1 items-center gap-1.5 min-w-0">
         {reservation.guest.vipStatus && (
           <Crown className="w-3 h-3 text-amber-300 shrink-0 fill-amber-300" />
         )}
@@ -65,7 +73,7 @@ export const ReservationBar: React.FC<ReservationBarProps> = ({
       </div>
 
       {!compact && (
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1 shrink-0 max-w-[45%] overflow-hidden">
           <OTABadge
             source={reservation.bookingSource || reservation.source || (reservation as any).booking_source || 'Direct Website'}
             size="xs"

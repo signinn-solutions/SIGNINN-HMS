@@ -85,7 +85,7 @@ CHANNELS = [
 
 def seed_50_rooms_yearly():
     print("=" * 70)
-    print("RESETTING DATABASE AND SEEDING 50 ROOMS WITH SEPTEMBER 21-30 RESERVATIONS")
+    print("RESETTING DATABASE AND SEEDING 50 ROOMS WITH SEPTEMBER 20-30 RESERVATIONS")
     print("=" * 70)
 
     # 1. Recreate tables cleanly
@@ -524,10 +524,10 @@ def seed_50_rooms_yearly():
     db.commit()
 
     # Ten days of linked reservations, ending September 30, 2026.
-    print("[7/8] Generating reservations for September 21-30, 2026...")
+    print("[7/8] Generating reservations for September 20-30, 2026...")
     TODAY = datetime.now().date()
-    START_DATE = datetime(2026, 9, 21).date()
-    END_DATE = datetime(2026, 10, 1).date()  # exclusive
+    START_DATE = datetime(2026, 9, 20).date()
+    END_DATE = datetime(2026, 9, 30).date()  # checkout may occur on Sep 30; no October data
 
     reservations_count = 0
     folios_count = 0

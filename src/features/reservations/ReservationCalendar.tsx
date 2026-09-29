@@ -116,8 +116,8 @@ export const ReservationCalendar: React.FC<ReservationCalendarProps> = ({
   return (
     <div className="space-y-4">
       {/* Calendar Top Control Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white/95 p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-[0_1px_3px_rgba(15,23,42,0.03)]">
-        <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 bg-white/95 p-4 rounded-2xl border border-slate-200/90 shadow-[0_1px_3px_rgba(15,23,42,0.03)]">
+        <div className="flex items-center gap-2.5 flex-wrap">
           <div className="flex items-center bg-slate-100/90 p-1 rounded-xl border border-slate-200/70">
             <button
               onClick={() => handleShiftDate(-viewDays)}
@@ -173,12 +173,12 @@ export const ReservationCalendar: React.FC<ReservationCalendarProps> = ({
         </div>
 
         {/* Filters */}
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap xl:justify-end">
           {/* Room Type select */}
           <select
             value={selectedRoomTypeId}
             onChange={(e) => setSelectedRoomTypeId(e.target.value)}
-            className="text-xs h-9 px-3 bg-slate-50/80 hover:bg-white border border-slate-200/90 rounded-xl text-slate-800 font-medium outline-none focus:border-blue-600 cursor-pointer transition-colors shadow-2xs"
+            className="text-xs h-9 px-3 bg-slate-50/80 hover:bg-white border border-slate-200/90 rounded-xl text-slate-800 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 cursor-pointer transition-colors shadow-2xs"
           >
             <option value="all">All Room Types</option>
             {roomTypes.map((rt) => (
@@ -192,7 +192,7 @@ export const ReservationCalendar: React.FC<ReservationCalendarProps> = ({
           <select
             value={selectedFloor}
             onChange={(e) => setSelectedFloor(e.target.value)}
-            className="text-xs h-9 px-3 bg-slate-50/80 hover:bg-white border border-slate-200/90 rounded-xl text-slate-800 font-medium outline-none focus:border-blue-600 cursor-pointer transition-colors shadow-2xs"
+            className="text-xs h-9 px-3 bg-slate-50/80 hover:bg-white border border-slate-200/90 rounded-xl text-slate-800 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 cursor-pointer transition-colors shadow-2xs"
           >
             <option value="all">All Floors</option>
             {availableFloors.map((floor) => (
@@ -210,7 +210,7 @@ export const ReservationCalendar: React.FC<ReservationCalendarProps> = ({
               placeholder="Room # or guest..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="text-xs h-9 pl-9 pr-3 bg-slate-50/80 hover:bg-white border border-slate-200/90 rounded-xl text-slate-800 placeholder:text-slate-400 font-medium outline-none focus:border-blue-600 w-36 sm:w-48 transition-all shadow-2xs"
+              className="text-xs h-9 pl-9 pr-3 bg-slate-50/80 hover:bg-white border border-slate-200/90 rounded-xl text-slate-800 placeholder:text-slate-400 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 w-36 sm:w-48 transition-colors shadow-2xs"
             />
           </div>
 
@@ -268,7 +268,7 @@ export const ReservationCalendar: React.FC<ReservationCalendarProps> = ({
               <div className="flex-1 flex">
                 {dates.map((dateStr) => {
                   const d = new Date(dateStr);
-                  const isToday = dateStr === '2026-09-16';
+                  const isToday = dateStr === new Date().toISOString().slice(0, 10);
                   const isWeekend = d.getDay() === 0 || d.getDay() === 6;
                   const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
                   const dayNum = d.getDate();
@@ -347,7 +347,7 @@ export const ReservationCalendar: React.FC<ReservationCalendarProps> = ({
                     <div className="flex-1 flex relative">
                       {/* Background Day Cells */}
                       {dates.map((dateStr) => {
-                        const isToday = dateStr === '2026-09-16';
+                        const isToday = dateStr === new Date().toISOString().slice(0, 10);
                         return (
                           <div
                             key={dateStr}
@@ -426,9 +426,10 @@ export const ReservationCalendar: React.FC<ReservationCalendarProps> = ({
                             }}
                             onMouseLeave={() => setHoveredRes(null)}
                             style={{
-                              left: `${leftPercent}%`,
-                              width: `${widthPercent}%`,
+                              left: `calc(${leftPercent}% + 3px)`,
+                              width: `calc(${widthPercent}% - 6px)`,
                             }}
+                            compact={spanDays <= 2}
                           />
                         );
                       })}

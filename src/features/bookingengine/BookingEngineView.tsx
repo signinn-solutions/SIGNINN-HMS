@@ -350,8 +350,8 @@ export const BookingEngineView: React.FC<BookingEngineViewProps> = ({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Total Paid via UPI:</span>
-                  <span className="font-bold text-emerald-700">{formatCurrency(grandTotal)}</span>
+                  <span className="text-gray-500">Amount due:</span>
+                  <span className="font-bold text-amber-700">{formatCurrency(grandTotal)}</span>
                 </div>
               </div>
 

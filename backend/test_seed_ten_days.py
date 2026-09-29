@@ -19,7 +19,7 @@ def test_seed_reservations_stop_at_september_30(monkeypatch):
             func.max(Reservation.check_out_date),
         ).one()
     assert count > 50
-    assert first_arrival >= "2026-09-21"
-    assert last_arrival <= "2026-09-30"
-    assert last_departure <= "2026-10-01"
+    assert first_arrival >= "2026-09-20"
+    assert last_arrival < "2026-09-30"
+    assert last_departure <= "2026-09-30"
     engine.dispose()
