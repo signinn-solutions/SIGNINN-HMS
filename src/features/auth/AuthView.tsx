@@ -44,11 +44,11 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [isLoading, setIsLoading] = useState(false);
 
   // Form states
-  const [email, setEmail] = useState('alex.morgan@grandazure.com');
-  const [password, setPassword] = useState('password123');
-  const [fullName, setFullName] = useState('Alex Morgan');
-  const [hotelName, setHotelName] = useState('Grand Azure Resort & Spa');
-  const [subdomain, setSubdomain] = useState('grand-azure');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [hotelName, setHotelName] = useState('');
+  const [subdomain, setSubdomain] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole>(initialRole);
   const [rememberMe, setRememberMe] = useState(true);
 

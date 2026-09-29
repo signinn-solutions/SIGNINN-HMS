@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import {
-  Globe, RefreshCw, Sliders, Mail, Calendar, FileSpreadsheet,
+  Globe, RefreshCw, Sliders,
   Copy, Check, Play, Zap, ExternalLink, TrendingDown, TrendingUp,
-  ArrowRight, Link2, AlertCircle, CheckCircle2, Upload, BarChart3, IndianRupee,
+  ArrowRight, Link2, AlertCircle, CheckCircle2, BarChart3, IndianRupee,
   ShieldCheck, ArrowUpRight, Radio, Send, Database, Lock, Eye, Filter,
   SlidersHorizontal, CheckSquare, Settings2, Info, ChevronRight,
 } from "lucide-react";
@@ -133,7 +133,7 @@ export const ChannelsView: React.FC<ChannelsViewProps> = ({
   const [simSpecialReq, setSimSpecialReq] = useState("Late checkout requested, airport transfer needed");
   const [simResult, setSimResult] = useState<any | null>(null);
 
-  const propertyName = currentProperty?.name || "Grand Azure Resort & Spa";
+  const propertyName = currentProperty?.name || "Selected property";
   const hotelCode = aiosellConfig?.hotelCode || "";
   const partnerId = aiosellConfig?.partnerId || "";
   const webhookUrl = `${window.location.protocol}//${window.location.host}/api/channels/aiosell/webhook`;

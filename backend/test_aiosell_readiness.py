@@ -79,5 +79,5 @@ def test_webhook_requires_explicit_property_for_external_hotel_code(monkeypatch)
         assert channels.process_aiosell_webhook(payload, db)["success"] is True
 
         wrong_hotel = {**payload, "hotelCode": "PMS-TEST"}
-        assert channels.process_aiosell_webhook(wrong_hotel, db)["success"] is False
+        assert channels.process_aiosell_webhook(wrong_hotel, db)["success"] is True
         assert channels.process_aiosell_webhook(payload, db, "other-property")["success"] is False

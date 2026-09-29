@@ -181,7 +181,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-                {todayFormatted} • {property?.name || 'Grand Azure Resort & Spa'} · Today's arrivals, room allocations & checkout queue.
+                {todayFormatted} • {property?.name || 'Selected property'} · Today's arrivals, room allocations & checkout queue.
               </p>
             </div>
 

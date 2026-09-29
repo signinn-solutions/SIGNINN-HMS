@@ -17,6 +17,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { Input, Select } from '../../components/ui/Input';
 import { useToast } from '../../components/ui/Toast';
+import { useAppStore } from '../../stores/useAppStore';
 
 export interface PaymentsViewProps {
   payments: PaymentTransaction[];
@@ -25,6 +26,7 @@ export interface PaymentsViewProps {
 
 export const PaymentsView: React.FC<PaymentsViewProps> = ({ payments, onRecordPayment }) => {
   const { showToast } = useToast();
+  const property = useAppStore((state) => state.currentProperty);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMethod, setSelectedMethod] = useState('all');
   const [isCashDrawerOpen, setIsCashDrawerOpen] = useState(false);
@@ -186,7 +188,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({ payments, onRecordPa
         onClose={() => setIsCashDrawerOpen(false)}
         maxWidth="md"
         title="Daily Shift Cash Drawer Reconciliation"
-        description="Shift audit for physical counter float at APKA INN"
+        description={`Shift audit for physical counter float at ${property?.name || 'the selected property'}`}
         footer={
           <Button variant="primary" size="sm" onClick={() => setIsCashDrawerOpen(false)}>
             Close Shift Audit

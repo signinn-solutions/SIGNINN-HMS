@@ -99,12 +99,13 @@ def create_reservation(
     candidates = db.query(Room).filter(
         Room.tenant_id == tenant_id,
         Room.property_id == prop_id,
-        Room.room_type_id == res_in.room_type_id,
         Room.maintenance_status == "Operational",
         ~Room.id.in_(occupied_room_ids),
     )
     if res_in.room_id:
         candidates = candidates.filter(Room.id == res_in.room_id)
+    else:
+        candidates = candidates.filter(Room.room_type_id == res_in.room_type_id)
     room = candidates.order_by(Room.room_number).with_for_update().first()
     if not room:
         raise HTTPException(status_code=409, detail="No free room of this type for the selected dates")
@@ -152,8 +153,8 @@ def create_reservation(
         guest_id=guest.id if guest else "gst-temp",
         room_id=room.id,
         room_number=room.room_number,
-        room_type_id=res_in.room_type_id,
-        room_type_name=res_in.room_type_name or "Standard Room",
+        room_type_id=room.room_type_id or res_in.room_type_id,
+        room_type_name=room.room_type_name or res_in.room_type_name or "Standard Room",
         check_in_date=res_in.check_in_date,
         check_out_date=res_in.check_out_date,
         nights=res_in.nights,

@@ -25,7 +25,7 @@ import { useToast } from '../../components/ui/Toast';
 export interface SettingsViewProps {
   property: Property;
   roomTypes: RoomType[];
-  onUpdateProperty: (prop: Partial<Property>) => void;
+  onUpdateProperty: (prop: Partial<Property>) => void | Promise<void>;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -34,7 +34,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onUpdateProperty,
 }) => {
   const { showToast } = useToast();
-  const [activeTab, setActiveTab] = useState<'profile' | 'property' | 'gst' | 'payments' | 'channels'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'property' | 'gst' | 'payments' | 'channels'>('property');
 
   // User profile states
   const [userName, setUserName] = useState('Alex Morgan');
@@ -58,8 +58,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [checkOutTime, setCheckOutTime] = useState(property.checkOutTime);
   const [gstin, setGstin] = useState(property.gstin);
 
-  const handleSave = () => {
-    onUpdateProperty({
+  const handleSave = async () => {
+    await onUpdateProperty({
       name,
       tagline,
       phone,
@@ -70,8 +70,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       gstin,
     });
     showToast({
-      title: 'Preferences Saved',
-      description: 'Account and operational parameters updated successfully.',
+      title: 'Property Saved',
+      description: 'Property details and operating parameters were updated.',
       type: 'success',
     });
   };
@@ -107,11 +107,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         activeTab={activeTab}
         onChange={(t) => setActiveTab(t as any)}
         tabs={[
-          { id: 'profile', label: 'User Profile & Preferences' },
           { id: 'property', label: 'Hotel Profile & Policies' },
           { id: 'gst', label: 'GST & Tax Slabs' },
-          { id: 'payments', label: 'Payment Gateways & UPI' },
-          { id: 'channels', label: 'API Integrations' },
         ]}
       />
 

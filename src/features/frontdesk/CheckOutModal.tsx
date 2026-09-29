@@ -5,6 +5,7 @@ import { Input, Select } from '../../components/ui/Input';
 import { Reservation, Folio } from '../../types';
 import { formatCurrency } from '../../utils/formatters';
 import { useToast } from '../../components/ui/Toast';
+import { useAppStore } from '../../stores/useAppStore';
 import {
   LogOut,
   CreditCard,
@@ -32,6 +33,7 @@ export const CheckOutModal: React.FC<CheckOutModalProps> = ({
   onCompleteCheckOut,
 }) => {
   const { showToast } = useToast();
+  const property = useAppStore((state) => state.currentProperty);
   const [keysReturned, setKeysReturned] = useState(true);
   const [minibarCleared, setMinibarCleared] = useState(true);
   const [settleAmount, setSettleAmount] = useState<number>(0);
@@ -222,7 +224,7 @@ export const CheckOutModal: React.FC<CheckOutModalProps> = ({
           <div className="p-4 bg-white border border-gray-300 rounded-xl shadow-xs font-mono text-[11px] text-gray-800 space-y-2">
             <div className="border-b pb-2 flex justify-between">
               <div>
-                <strong>APKA INN - TAX INVOICE</strong>
+                <strong>{property?.name || 'SELECTED PROPERTY'} - TAX INVOICE</strong>
                 <div className="text-[10px] text-gray-500">GSTIN: 32AABCS1429B1Z8</div>
               </div>
               <div className="text-right">
@@ -255,7 +257,7 @@ export const CheckOutModal: React.FC<CheckOutModalProps> = ({
               </div>
             </div>
             <div className="text-center text-[10px] text-gray-500 pt-1">
-              Thank you for staying with APKA INN! Powered by SIGNINN HMS
+              Thank you for staying with {property?.name || 'us'}! Powered by SIGNINN HMS
             </div>
           </div>
         )}

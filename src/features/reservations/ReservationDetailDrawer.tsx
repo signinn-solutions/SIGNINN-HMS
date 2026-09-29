@@ -24,6 +24,7 @@ import {
   Send,
 } from 'lucide-react';
 import { useToast } from '../../components/ui/Toast';
+import { useAppStore } from '../../stores/useAppStore';
 
 export interface ReservationDetailDrawerProps {
   isOpen: boolean;
@@ -51,6 +52,7 @@ export const ReservationDetailDrawer: React.FC<ReservationDetailDrawerProps> = (
   onOpenGuestProfile,
 }) => {
   const { showToast } = useToast();
+  const property = useAppStore((state) => state.currentProperty);
   const [selectedRoomId, setSelectedRoomId] = useState<string>('');
   const [newNote, setNewNote] = useState('');
   const [notesList, setNotesList] = useState<string[]>([]);
@@ -75,17 +77,13 @@ export const ReservationDetailDrawer: React.FC<ReservationDetailDrawerProps> = (
     setNewNote('');
     showToast({
       title: 'Operational Note Appended',
-      description: 'Saved to reservation history log.',
+      description: 'Added for this open screen only. Persistent reservation notes are not configured.',
       type: 'info',
     });
   };
 
   const handlePrintRegistration = () => {
-    showToast({
-      title: 'Registration Card Form Generated',
-      description: `Printing legal GRC for ${reservation.guest.firstName} ${reservation.guest.lastName}...`,
-      type: 'info',
-    });
+    window.print();
   };
 
   return (
@@ -113,7 +111,7 @@ export const ReservationDetailDrawer: React.FC<ReservationDetailDrawerProps> = (
           <span>•</span>
           <span>Booked on {new Date(reservation.createdAt).toLocaleDateString()}</span>
           <span>•</span>
-          <span>APKA INN</span>
+          <span>{property?.name || 'Selected property'}</span>
         </div>
       }
       footer={

@@ -1,4 +1,5 @@
 import pytest
+import uuid
 from fastapi.testclient import TestClient
 from backend.main import app
 from backend.database import SessionLocal
@@ -250,7 +251,7 @@ def test_staff_members_persisted_and_retrieved():
     # Add a new staff member
     new_staff_payload = {
         "name": "Integration Test Attendant",
-        "email": "test.attendant@grandazure.com",
+        "email": f"test.attendant.{uuid.uuid4().hex[:8]}@example.com",
         "phone": "+91 99000 88888",
         "role": "Housekeeping",
         "propertyId": "prop-1",

@@ -4,6 +4,7 @@ import uuid
 import random
 from pathlib import Path
 from datetime import datetime, timedelta
+from sqlalchemy import inspect
 
 # Ensure backend can be imported
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -85,11 +86,21 @@ CHANNELS = [
 
 def seed_50_rooms_yearly():
     print("=" * 70)
-    print("RESETTING DATABASE AND SEEDING 50 ROOMS WITH SEPTEMBER 20-30 RESERVATIONS")
+    print("INITIALIZING 50-ROOM DEMO DATA FOR SEPTEMBER 20-30")
     print("=" * 70)
 
-    # 1. Recreate tables cleanly
-    Base.metadata.drop_all(bind=engine)
+    # Seed only a new database. Existing hotel data must never be reset by startup or reruns.
+    table_names = set(inspect(engine).get_table_names())
+    if "tenants" in table_names:
+        existing_db = SessionLocal()
+        try:
+            if existing_db.query(Tenant.id).first() is not None:
+                print("Database already contains hotel data; seed skipped.")
+                return False
+        finally:
+            existing_db.close()
+
+    # 1. Create the schema for a new database.
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
 
@@ -1094,6 +1105,7 @@ def seed_50_rooms_yearly():
     print("=" * 70)
 
     db.close()
+    return True
 
 
 if __name__ == "__main__":

@@ -16,6 +16,7 @@ import { MessageThread } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { useToast } from '../../components/ui/Toast';
+import { useAppStore } from '../../stores/useAppStore';
 
 export interface MessagesViewProps {
   threads: MessageThread[];
@@ -24,6 +25,7 @@ export interface MessagesViewProps {
 
 export const MessagesView: React.FC<MessagesViewProps> = ({ threads, onSendMessage }) => {
   const { showToast } = useToast();
+  const property = useAppStore((state) => state.currentProperty);
   const [selectedThreadId, setSelectedThreadId] = useState<string>(threads[0]?.id || '');
   const [inputText, setInputText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -223,7 +225,7 @@ export const MessagesView: React.FC<MessagesViewProps> = ({ threads, onSendMessa
                 <button
                   onClick={() =>
                     applyTemplate(
-                      'Welcome to APKA INN! High-Speed WiFi Network: APKA-GUEST | Password: apka-hospitality'
+                      `Welcome to ${property?.name || 'our property'}! Please contact reception for the current WiFi network and password.`
                     )
                   }
                   className="px-2.5 py-1 bg-white border border-gray-200 rounded-full text-[11px] text-gray-700 hover:bg-gray-100 shrink-0 cursor-pointer"
@@ -253,7 +255,7 @@ export const MessagesView: React.FC<MessagesViewProps> = ({ threads, onSendMessa
                 <button
                   onClick={() =>
                     applyTemplate(
-                      'Thank you for staying with APKA INN! We hope you loved your visit. Could you spare 30s to rate us on Google? g.page/apkainn'
+                      `Thank you for staying with ${property?.name || 'our property'}! We hope you enjoyed your visit.`
                     )
                   }
                   className="px-2.5 py-1 bg-white border border-gray-200 rounded-full text-[11px] text-gray-700 hover:bg-gray-100 shrink-0 cursor-pointer"

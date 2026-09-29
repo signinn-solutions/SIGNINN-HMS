@@ -13,6 +13,7 @@ import {
   Sparkles,
   RefreshCw,
 } from 'lucide-react';
+import { useAppStore } from '../../stores/useAppStore';
 
 export interface UserMenuProps {
   currentRole: UserRole;
@@ -41,11 +42,12 @@ export const UserMenu: React.FC<UserMenuProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showRoleSelector, setShowRoleSelector] = useState(false);
+  const currentUser = useAppStore((state) => state.currentUser);
   const isSuperAdmin = currentRole === 'SIGNINN Super Admin';
 
-  const userInitials = isSuperAdmin ? 'SA' : 'AM';
-  const userName = isSuperAdmin ? 'Platform Administrator' : 'Ananya Mukherjee';
-  const userEmail = isSuperAdmin ? 'admin@signinn.io' : 'ananya.m@apkahotels.in';
+  const userName = currentUser?.name || (isSuperAdmin ? 'Platform Administrator' : 'Signed-in user');
+  const userEmail = currentUser?.email || 'No email available';
+  const userInitials = userName.split(/\s+/).filter(Boolean).map((part) => part[0]).join('').slice(0, 2).toUpperCase() || 'U';
 
   return (
     <div className="relative">
@@ -67,7 +69,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
         </div>
         <div className="hidden xl:flex flex-col text-left">
           <span className="text-xs font-semibold text-gray-900 leading-tight">
-            {isSuperAdmin ? 'Super Admin' : 'A. Mukherjee'}
+            {userName}
           </span>
           <span className="text-[10px] text-gray-500 leading-tight truncate max-w-[90px]">
             {currentRole}
@@ -133,18 +135,6 @@ export const UserMenu: React.FC<UserMenuProps> = ({
                     <span>Staff & Access Management</span>
                   </button>
 
-                  {onOpenOnboarding && (
-                    <button
-                      onClick={() => {
-                        setIsOpen(false);
-                        onOpenOnboarding();
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors cursor-pointer"
-                    >
-                      <HelpCircle className="w-4 h-4 text-gray-400" />
-                      <span>Setup Guide & Health Check</span>
-                    </button>
-                  )}
                 </div>
 
                 {/* Logout Action */}

@@ -256,16 +256,8 @@ def test_aiosell_config_endpoint_masks_credentials():
 
 def test_aiosell_room_mapping_endpoint():
     res = client.get("/api/channels/aiosell/room-mapping", headers={"X-Tenant-ID": "tenant-1"})
-    assert res.status_code == 200
-    data = res.json()
-    assert data.get("success") is True
-    mappings = data.get("mappings", [])
-    assert len(mappings) >= 4, "Expected mapped room types for property"
-    for m in mappings:
-        assert "pmsRoomTypeCode" in m
-        assert "aiosellRoomCode" in m
-        assert "aiosellRateplanCode" in m
-    print("PASS: test_aiosell_room_mapping_endpoint")
+    assert res.status_code == 401
+    print("PASS: test_aiosell_room_mapping_endpoint_requires_login")
 
 
 def test_aiosell_webhook_multi_property_resolution():

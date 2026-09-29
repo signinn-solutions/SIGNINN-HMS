@@ -2,6 +2,18 @@ import { useAppStore } from '../../stores/useAppStore';
 
 const BASE_URL = ''; // Relative URL handled by Vite proxy to backend
 
+const camelizeKey = (key: string) => key.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
+
+function normalizeApiResponse(value: unknown): any {
+  if (Array.isArray(value)) return value.map(normalizeApiResponse);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, item]) => [camelizeKey(key), normalizeApiResponse(item)])
+    );
+  }
+  return value;
+}
+
 export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -44,7 +56,7 @@ export async function apiRequest<T>(
       throw new Error(message);
     }
 
-    return (await response.json()) as T;
+    return normalizeApiResponse(await response.json()) as T;
   } catch (err: any) {
     console.warn(`[API Client] Request to ${endpoint} failed:`, err.message);
     throw err;

@@ -29,7 +29,6 @@ import {
   KeyRound,
   X,
   Lock,
-  QrCode,
 } from 'lucide-react';
 import { UserRole, Tenant } from '../../types';
 import { cn } from '../../utils/formatters';
@@ -128,14 +127,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           icon: Wrench,
           allowedRoles: ['Group Admin', 'Owner', 'Property Manager', 'Front Desk', 'Maintenance'],
         },
-        {
-          id: 'qr-service',
-          label: 'In-Room Dining (QR)',
-          icon: QrCode,
-          badge: 'Add-on',
-          featureFlag: 'qrRoomService',
-          allowedRoles: ['Group Admin', 'Owner', 'Property Manager', 'Front Desk'],
-        },
       ],
     },
     {
@@ -183,14 +174,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           label: 'Messages',
           icon: MessageSquare,
           allowedRoles: ['Group Admin', 'Owner', 'Property Manager', 'Front Desk', 'Housekeeping'],
-        },
-        {
-          id: 'whatsapp-concierge',
-          label: 'WhatsApp Concierge',
-          icon: MessageSquare,
-          badge: 'Add-on',
-          featureFlag: 'whatsappAutomations',
-          allowedRoles: ['Group Admin', 'Owner', 'Property Manager', 'Front Desk'],
         },
       ],
     },

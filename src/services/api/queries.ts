@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from './apiClient';
 import { useAppStore } from '../../stores/useAppStore';
-import * as mockServices from '../index';
 import {
   Tenant,
   Property,
@@ -53,13 +52,7 @@ export const QUERY_KEYS = {
 export function useTenantsQuery() {
   return useQuery({
     queryKey: QUERY_KEYS.tenants,
-    queryFn: async () => {
-      try {
-        return await apiRequest<Tenant[]>('/api/tenants');
-      } catch {
-        return mockServices.getInitialData().tenants || [];
-      }
-    },
+    queryFn: () => apiRequest<Tenant[]>('/api/tenants'),
     staleTime: 1000 * 30, // 30s
   });
 }
@@ -67,22 +60,7 @@ export function useTenantsQuery() {
 export function usePlatformMetricsQuery() {
   return useQuery({
     queryKey: QUERY_KEYS.platformMetrics,
-    queryFn: async () => {
-      try {
-        return await apiRequest<any>('/api/tenants/platform/metrics');
-      } catch {
-        return {
-          totalTenants: 3,
-          activeTenants: 3,
-          totalRoomsManaged: 90,
-          monthlyRecurringRevenue: 27497.0,
-          annualRecurringRevenue: 329964.0,
-          totalGmvProcessed: 2570000.0,
-          otaSyncSuccessRate: 99.8,
-          activeApiSessions: 42,
-        };
-      }
-    },
+    queryFn: () => apiRequest<any>('/api/tenants/platform/metrics'),
     staleTime: 1000 * 60,
   });
 }
@@ -96,7 +74,6 @@ export function usePropertiesQuery() {
   return useQuery({
     queryKey: QUERY_KEYS.properties(currentTenantId),
     queryFn: async () => {
-      try {
         const list = await apiRequest<any[]>('/api/properties');
         return list.map((p) => ({
           ...p,
@@ -105,14 +82,6 @@ export function usePropertiesQuery() {
           tenantId: p.tenantId ?? p.tenant_id,
           tenant_id: p.tenant_id ?? p.tenantId,
         })) as Property[];
-      } catch {
-        const all = (mockServices.getInitialData().properties || []).map((p: any) => ({
-          ...p,
-          totalRooms: p.totalRooms ?? p.total_rooms ?? 0,
-          total_rooms: p.total_rooms ?? p.totalRooms ?? 0,
-        }));
-        return all.filter((p: any) => p.tenant_id === currentTenantId || p.tenantId === currentTenantId);
-      }
     },
     staleTime: 1000 * 60,
   });
@@ -127,13 +96,8 @@ export function useRoomTypesQuery(propertyId?: string | null) {
   return useQuery({
     queryKey: QUERY_KEYS.roomTypes(currentTenantId, propertyId),
     queryFn: async () => {
-      try {
-        const query = propertyId ? `?property_id=${propertyId}` : '';
-        return await apiRequest<RoomType[]>(`/api/room-types${query}`);
-      } catch {
-        const all = mockServices.getInitialData().roomTypes;
-        return propertyId ? all.filter((r) => r.propertyId === propertyId) : all;
-      }
+      const query = propertyId ? `?property_id=${propertyId}` : '';
+      return apiRequest<RoomType[]>(`/api/room-types${query}`);
     },
   });
 }
@@ -242,11 +206,7 @@ export function useGuestsQuery() {
   return useQuery({
     queryKey: QUERY_KEYS.guests(currentTenantId),
     queryFn: async () => {
-      try {
-        return await apiRequest<Guest[]>('/api/guests');
-      } catch {
-        return mockServices.getInitialData().guests || [];
-      }
+      return apiRequest<Guest[]>('/api/guests');
     },
   });
 }
@@ -260,11 +220,7 @@ export function useFoliosQuery() {
   return useQuery({
     queryKey: QUERY_KEYS.folios(currentTenantId),
     queryFn: async () => {
-      try {
-        return await apiRequest<Folio[]>('/api/billing/folios');
-      } catch {
-        return mockServices.getInitialData().folios || [];
-      }
+      return apiRequest<Folio[]>('/api/billing/folios');
     },
   });
 }
@@ -275,11 +231,7 @@ export function usePaymentsQuery() {
   return useQuery({
     queryKey: QUERY_KEYS.payments(currentTenantId),
     queryFn: async () => {
-      try {
-        return await apiRequest<PaymentTransaction[]>('/api/billing/payments');
-      } catch {
-        return mockServices.getInitialData().payments || [];
-      }
+      return apiRequest<PaymentTransaction[]>('/api/billing/payments');
     },
   });
 }
@@ -290,11 +242,7 @@ export function useInvoicesQuery() {
   return useQuery({
     queryKey: QUERY_KEYS.invoices(currentTenantId),
     queryFn: async () => {
-      try {
-        return await apiRequest<Invoice[]>('/api/billing/invoices');
-      } catch {
-        return mockServices.getInitialData().invoices || [];
-      }
+      return apiRequest<Invoice[]>('/api/billing/invoices');
     },
   });
 }
@@ -308,11 +256,7 @@ export function useHousekeepingTasksQuery() {
   return useQuery({
     queryKey: QUERY_KEYS.housekeeping(currentTenantId),
     queryFn: async () => {
-      try {
-        return await apiRequest<HousekeepingTask[]>('/api/housekeeping/tasks');
-      } catch {
-        return mockServices.getInitialData().housekeepingTasks || [];
-      }
+      return apiRequest<HousekeepingTask[]>('/api/housekeeping/tasks');
     },
   });
 }
@@ -323,11 +267,7 @@ export function useMaintenanceTicketsQuery() {
   return useQuery({
     queryKey: QUERY_KEYS.maintenance(currentTenantId),
     queryFn: async () => {
-      try {
-        return await apiRequest<MaintenanceTicket[]>('/api/maintenance/tickets');
-      } catch {
-        return mockServices.getInitialData().maintenanceTickets || [];
-      }
+      return apiRequest<MaintenanceTicket[]>('/api/maintenance/tickets');
     },
   });
 }
@@ -381,11 +321,7 @@ export function useRatePlansQuery() {
   return useQuery({
     queryKey: QUERY_KEYS.ratePlans(currentTenantId),
     queryFn: async () => {
-      try {
-        return await apiRequest<RatePlan[]>('/api/rates');
-      } catch {
-        return mockServices.getInitialData().ratePlans || [];
-      }
+      return apiRequest<RatePlan[]>('/api/rates');
     },
   });
 }
@@ -414,11 +350,7 @@ export function useAuditLogsQuery() {
   return useQuery({
     queryKey: QUERY_KEYS.auditLogs(currentTenantId),
     queryFn: async () => {
-      try {
-        return await apiRequest<AuditLogEntry[]>('/api/staff-audit/audit-logs');
-      } catch {
-        return mockServices.getInitialData().auditLogs || [];
-      }
+      return apiRequest<AuditLogEntry[]>('/api/staff-audit/audit-logs');
     },
   });
 }
@@ -538,23 +470,13 @@ export function useCheckOutMutation() {
       finalPayment: number;
       method?: string;
     }) => {
-      try {
-        return await apiRequest(`/api/reservations/${resId}/check-out`, {
+      return apiRequest(`/api/reservations/${resId}/check-out`, {
           method: 'POST',
           body: JSON.stringify({
             settlement_amount: finalPayment,
             payment_method: method,
           }),
         });
-      } catch {
-        await mockServices.updateReservationStatus(resId, 'Checked Out');
-        if (finalPayment > 0) {
-          const folio = mockServices.getInitialData().folios.find((f) => f.reservationId === resId);
-          if (folio) {
-            await mockServices.recordPayment(folio.id, finalPayment, method as any, `CKOUT-${Date.now()}`);
-          }
-        }
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
@@ -572,14 +494,10 @@ export function useReassignRoomMutation() {
 
   return useMutation({
     mutationFn: async ({ resId, newRoomId }: { resId: string; newRoomId: string }) => {
-      try {
-        return await apiRequest(`/api/reservations/${resId}/reassign-room`, {
+      return apiRequest(`/api/reservations/${resId}/reassign-room`, {
           method: 'POST',
           body: JSON.stringify({ newRoomId }),
         });
-      } catch {
-        return await mockServices.reassignRoom(resId, newRoomId);
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
@@ -593,14 +511,10 @@ export function useUpdateHousekeepingMutation() {
 
   return useMutation({
     mutationFn: async ({ roomId, status }: { roomId: string; status: any }) => {
-      try {
-        return await apiRequest(`/api/rooms/${roomId}/housekeeping`, {
+      return apiRequest(`/api/rooms/${roomId}/housekeeping`, {
           method: 'PATCH',
           body: JSON.stringify({ status }),
         });
-      } catch {
-        return await mockServices.updateHousekeepingStatus(roomId, status);
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
@@ -614,14 +528,10 @@ export function useUpdateMaintenanceMutation() {
 
   return useMutation({
     mutationFn: async ({ roomId, status }: { roomId: string; status: any }) => {
-      try {
-        return await apiRequest(`/api/rooms/${roomId}/maintenance`, {
+      return apiRequest(`/api/rooms/${roomId}/maintenance`, {
           method: 'PATCH',
           body: JSON.stringify({ status }),
         });
-      } catch {
-        return await mockServices.updateMaintenanceStatus(roomId, status);
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
@@ -635,8 +545,7 @@ export function useCreateMaintenanceTicketMutation() {
 
   return useMutation({
     mutationFn: async (ticket: any) => {
-      try {
-        return await apiRequest('/api/maintenance/tickets', {
+      return apiRequest('/api/maintenance/tickets', {
           method: 'POST',
           body: JSON.stringify({
             room_id: ticket.roomId,
@@ -648,9 +557,6 @@ export function useCreateMaintenanceTicketMutation() {
             category: ticket.category || 'General',
           }),
         });
-      } catch {
-        return await mockServices.addMaintenanceTicket(ticket);
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
@@ -664,14 +570,10 @@ export function useUpdateMaintenanceTicketStatusMutation() {
 
   return useMutation({
     mutationFn: async ({ ticketId, status }: { ticketId: string; status: string }) => {
-      try {
-        return await apiRequest(`/api/maintenance/tickets/${ticketId}/status`, {
+      return apiRequest(`/api/maintenance/tickets/${ticketId}/status`, {
           method: 'PATCH',
           body: JSON.stringify({ status }),
         });
-      } catch {
-        return await mockServices.updateTicketStatus(ticketId, status as any);
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
@@ -685,14 +587,10 @@ export function useUpdateHousekeepingTaskStatusMutation() {
 
   return useMutation({
     mutationFn: async ({ taskId, status }: { taskId: string; status: string }) => {
-      try {
-        return await apiRequest(`/api/housekeeping/tasks/${taskId}/status`, {
+      return apiRequest(`/api/housekeeping/tasks/${taskId}/status`, {
           method: 'PATCH',
           body: JSON.stringify({ status }),
         });
-      } catch {
-        return await mockServices.updateTaskStatus(taskId, status as any);
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['housekeeping'] });
@@ -706,14 +604,10 @@ export function useToggleHousekeepingItemMutation() {
 
   return useMutation({
     mutationFn: async ({ taskId, itemId }: { taskId: string; itemId: string }) => {
-      try {
-        return await apiRequest(`/api/housekeeping/tasks/${taskId}/toggle-item`, {
+      return apiRequest(`/api/housekeeping/tasks/${taskId}/toggle-item`, {
           method: 'POST',
           body: JSON.stringify({ itemId }),
         });
-      } catch {
-        return await mockServices.toggleChecklistItem(taskId, itemId);
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['housekeeping'] });
@@ -726,8 +620,7 @@ export function useUpdateRatePlanMutation() {
 
   return useMutation({
     mutationFn: async (plan: any) => {
-      try {
-        return await apiRequest(`/api/rates/${plan.id}`, {
+      return apiRequest(`/api/rates/${plan.id}`, {
           method: 'PUT',
           body: JSON.stringify({
             name: plan.name,
@@ -737,9 +630,6 @@ export function useUpdateRatePlanMutation() {
             meal_plan: plan.mealPlan || plan.meal_plan,
           }),
         });
-      } catch {
-        return await mockServices.updateRatePlan(plan);
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ratePlans'] });
@@ -762,14 +652,10 @@ export function useRecordPaymentMutation() {
       method: any;
       reference?: string;
     }) => {
-      try {
-        return await apiRequest(`/api/billing/folios/${folioId}/payments`, {
+      return apiRequest(`/api/billing/folios/${folioId}/payments`, {
           method: 'POST',
           body: JSON.stringify({ amount, method, reference }),
         });
-      } catch {
-        return await mockServices.recordPayment(folioId, amount, method, reference);
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['folios'] });
@@ -784,14 +670,10 @@ export function useAddFolioChargeMutation() {
 
   return useMutation({
     mutationFn: async ({ folioId, item }: { folioId: string; item: any }) => {
-      try {
-        return await apiRequest(`/api/billing/folios/${folioId}/charges`, {
+      return apiRequest(`/api/billing/folios/${folioId}/charges`, {
           method: 'POST',
           body: JSON.stringify(item),
         });
-      } catch {
-        return await mockServices.addFolioCharge(folioId, item);
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['folios'] });
@@ -804,14 +686,10 @@ export function useProvisionTenantMutation() {
 
   return useMutation({
     mutationFn: async (tenantData: any) => {
-      try {
-        return await apiRequest<Tenant>('/api/tenants', {
+      return apiRequest<Tenant>('/api/tenants', {
           method: 'POST',
           body: JSON.stringify(tenantData),
         });
-      } catch {
-        return mockServices.provisionTenant(tenantData);
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
@@ -825,14 +703,10 @@ export function useUpdateTenantStatusMutation() {
 
   return useMutation({
     mutationFn: async ({ tenantId, status }: { tenantId: string; status: any }) => {
-      try {
-        return await apiRequest(`/api/tenants/${tenantId}/status`, {
+      return apiRequest(`/api/tenants/${tenantId}/status`, {
           method: 'PATCH',
           body: JSON.stringify({ status }),
         });
-      } catch {
-        return mockServices.updateTenantStatus(tenantId, status);
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
@@ -845,14 +719,10 @@ export function useUpdateTenantPlanMutation() {
 
   return useMutation({
     mutationFn: async ({ tenantId, plan }: { tenantId: string; plan: any }) => {
-      try {
-        return await apiRequest(`/api/tenants/${tenantId}/plan`, {
+      return apiRequest(`/api/tenants/${tenantId}/plan`, {
           method: 'PATCH',
           body: JSON.stringify({ plan }),
         });
-      } catch {
-        return mockServices.updateTenantPlan(tenantId, plan);
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
@@ -865,14 +735,10 @@ export function useUpdateTenantFeaturesMutation() {
 
   return useMutation({
     mutationFn: async ({ tenantId, features }: { tenantId: string; features: any }) => {
-      try {
-        return await apiRequest(`/api/tenants/${tenantId}/features`, {
+      return apiRequest(`/api/tenants/${tenantId}/features`, {
           method: 'PATCH',
           body: JSON.stringify({ features }),
         });
-      } catch {
-        return mockServices.updateTenantFeatures(tenantId, features);
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
@@ -885,14 +751,10 @@ export function useToggleTenantDeletionMutation() {
 
   return useMutation({
     mutationFn: async ({ tenantId, allowed }: { tenantId: string; allowed?: boolean }) => {
-      try {
-        return await apiRequest(`/api/tenants/${tenantId}/deletion-toggle`, {
+      return apiRequest(`/api/tenants/${tenantId}/deletion-toggle`, {
           method: 'PATCH',
           body: JSON.stringify({ deletion_allowed: allowed }),
         });
-      } catch {
-        return mockServices.toggleTenantDeletion(tenantId, allowed);
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
@@ -911,14 +773,10 @@ export function useRecordTenantSubscriptionPaymentMutation() {
       tenantId: string;
       paymentData: { amount: number; reference: string; method?: string; notes?: string; nextRenewalDate?: string };
     }) => {
-      try {
-        return await apiRequest(`/api/tenants/${tenantId}/payments`, {
+      return apiRequest(`/api/tenants/${tenantId}/payments`, {
           method: 'POST',
           body: JSON.stringify(paymentData),
         });
-      } catch {
-        return mockServices.recordTenantSubscriptionPayment(tenantId, paymentData);
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
@@ -932,13 +790,9 @@ export function useDeleteTenantMutation() {
 
   return useMutation({
     mutationFn: async ({ tenantId, force }: { tenantId: string; force?: boolean }) => {
-      try {
-        return await apiRequest(`/api/tenants/${tenantId}?force=${!!force}`, {
+      return apiRequest(`/api/tenants/${tenantId}?force=${!!force}`, {
           method: 'DELETE',
         });
-      } catch {
-        return mockServices.deleteTenant(tenantId, force);
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
@@ -956,15 +810,7 @@ export function useOtaIngestionLogsQuery() {
   return useQuery({
     queryKey: ['otaIngestionLogs', currentTenantId],
     queryFn: async () => {
-      try {
-        return await apiRequest<OtaIngestionLog[]>('/api/channels/logs');
-      } catch {
-        try {
-          return await apiRequest<OtaIngestionLog[]>('/api/ota/ingestion-logs');
-        } catch {
-          return [];
-        }
-      }
+      return apiRequest<OtaIngestionLog[]>('/api/channels/logs');
     },
     staleTime: 1000 * 15,
   });
@@ -976,15 +822,10 @@ export function useUpdateChannelMarkupMutation() {
 
   return useMutation({
     mutationFn: async ({ channelId, markup }: { channelId: string; markup: number }) => {
-      try {
-        return await apiRequest<any>(`/api/channels/${channelId}/markup`, {
+      return apiRequest<any>(`/api/channels/${channelId}/markup`, {
           method: 'PATCH',
           body: JSON.stringify({ rateMultiplier: markup }),
         });
-      } catch (e) {
-        await mockServices.updateChannelMarkup(channelId, markup);
-        return { message: 'Local updated' };
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['channels'] });

@@ -81,6 +81,11 @@ app.add_api_route(
 )
 
 
+@app.get("/api/health")
+def health_check():
+    return {"status": "healthy", "service": "signinn-hms-backend"}
+
+
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
@@ -104,11 +109,6 @@ else:
             "version": "1.0.0",
             "docs": "/docs",
         }
-
-@app.get("/api/health")
-def health_check():
-    return {"status": "healthy", "service": "signinn-hms-backend"}
-
 
 if __name__ == "__main__":
     import uvicorn

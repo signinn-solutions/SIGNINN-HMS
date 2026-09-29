@@ -49,6 +49,7 @@ PMS_TO_AIOSELL_MAPPING = {
 }
 
 AIOSELL_TO_PMS_ROOM_MAP = {
+    "standard": "DGV",
     "executive": "DGV",
     "suite": "EOS",
 }
@@ -536,12 +537,12 @@ def process_aiosell_webhook(payload: Dict[str, Any], db: Session, local_property
     if not hotel_code:
         return {"success": False, "message": "Missing hotelCode in webhook payload"}
 
-    if not DEFAULT_AIOSELL_HOTEL_CODE or hotel_code.lower() != DEFAULT_AIOSELL_HOTEL_CODE.lower():
-        return {"success": False, "message": "Webhook hotel code does not match configured Aiosell hotel"}
-    property_id_to_use = local_property_id or AIOSELL_PROPERTY_ID
-    if not property_id_to_use:
-        return {"success": False, "message": "Aiosell PMS property mapping is not configured"}
-    prop = db.query(Property).filter(Property.id == property_id_to_use).first()
+    if local_property_id:
+        prop = db.query(Property).filter(Property.id == local_property_id).first()
+    else:
+        prop = db.query(Property).filter(func.lower(Property.code) == hotel_code.lower()).first()
+        if not prop and DEFAULT_AIOSELL_HOTEL_CODE and hotel_code.lower() == DEFAULT_AIOSELL_HOTEL_CODE.lower() and AIOSELL_PROPERTY_ID:
+            prop = db.query(Property).filter(Property.id == AIOSELL_PROPERTY_ID).first()
 
     if not prop:
         return {

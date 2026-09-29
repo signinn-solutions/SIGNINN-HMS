@@ -38,7 +38,7 @@ export const WhatsAppConciergeModal: React.FC<WhatsAppConciergeModalProps> = ({
   currentProperty,
 }) => {
   const { showToast } = useToast();
-  const hotelName = currentProperty?.name || 'Grand Azure Resort';
+  const hotelName = currentProperty?.name || 'Selected property';
 
   const [templates, setTemplates] = useState<AutomationTemplate[]>([
     {

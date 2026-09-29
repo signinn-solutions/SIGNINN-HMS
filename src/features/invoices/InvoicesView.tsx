@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   FileText,
   Printer,
-  Download,
   Search,
   ExternalLink,
   ShieldCheck,
@@ -14,6 +13,7 @@ import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { useToast } from '../../components/ui/Toast';
+import { useAppStore } from '../../stores/useAppStore';
 
 export interface InvoicesViewProps {
   invoices: Invoice[];
@@ -21,6 +21,7 @@ export interface InvoicesViewProps {
 
 export const InvoicesView: React.FC<InvoicesViewProps> = ({ invoices }) => {
   const { showToast } = useToast();
+  const property = useAppStore((state) => state.currentProperty);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
@@ -127,20 +128,6 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ invoices }) => {
               </Button>
               <div className="flex items-center gap-2">
                 <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    showToast({
-                      title: 'Download Triggered',
-                      description: `${selectedInvoice.invoiceNumber}.pdf generated.`,
-                      type: 'success',
-                    })
-                  }
-                  leftIcon={<Download className="w-3.5 h-3.5" />}
-                >
-                  Download PDF
-                </Button>
-                <Button
                   variant="primary"
                   size="sm"
                   onClick={() => window.print()}
@@ -156,14 +143,14 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ invoices }) => {
             {/* Header / Hotel Details */}
             <div className="flex items-start justify-between border-b pb-4">
               <div>
-                <h2 className="text-lg font-extrabold text-gray-950 tracking-tight">APKA INN</h2>
+                <h2 className="text-lg font-extrabold text-gray-950 tracking-tight">{property?.name || 'Selected property'}</h2>
                 <p className="text-[11px] text-gray-500 mt-0.5">
-                  MG Road, Opp. Marine Drive, Ernakulam, Kochi, Kerala - 682011
+                  {property?.address || 'Property address not configured'}
                 </p>
                 <p className="text-[11px] text-gray-500">
                   GSTIN: <strong className="font-mono text-gray-800">32AABCS1429B1Z8</strong> • PAN: AABCS1429B
                 </p>
-                <p className="text-[11px] text-gray-500">Phone: +91 484 235 6789 • reservations@apkainn.com</p>
+                <p className="text-[11px] text-gray-500">Phone: {property?.phone || 'Not configured'} • {property?.email || 'Email not configured'}</p>
               </div>
 
               <div className="text-right">
@@ -260,7 +247,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ invoices }) => {
 
                 <div className="pt-8 text-center">
                   <div className="border-t border-gray-300 pt-1 text-[10px] text-gray-400">
-                    Authorized Signatory for APKA INN
+                    Authorized Signatory for {property?.name || 'Selected property'}
                   </div>
                 </div>
               </div>

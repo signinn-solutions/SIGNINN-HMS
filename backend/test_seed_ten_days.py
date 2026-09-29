@@ -22,4 +22,16 @@ def test_seed_reservations_stop_at_september_30(monkeypatch):
     assert first_arrival >= "2026-09-20"
     assert last_arrival < "2026-09-30"
     assert last_departure <= "2026-09-30"
+
+    with sessionmaker(bind=engine)() as db:
+        existing = db.query(Reservation).first()
+        existing_id = existing.id
+        existing.status = "Cancelled"
+        db.commit()
+
+    assert seed_module.seed_50_rooms_yearly() is False
+    with sessionmaker(bind=engine)() as db:
+        preserved = db.query(Reservation).filter(Reservation.id == existing_id).one()
+        assert preserved.status == "Cancelled"
+        assert db.query(func.count(Reservation.id)).scalar() == count
     engine.dispose()

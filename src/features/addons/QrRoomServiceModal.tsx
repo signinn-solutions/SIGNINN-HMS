@@ -59,7 +59,7 @@ export const QrRoomServiceModal: React.FC<QrRoomServiceModalProps> = ({
     { item: SAMPLE_MENU[4], qty: 2 },
   ]);
 
-  const hotelName = currentProperty?.name || 'Grand Azure Resort';
+  const hotelName = currentProperty?.name || 'Selected property';
   const cartTotal = cart.reduce((sum, line) => sum + line.item.price * line.qty, 0);
   const gstAmount = Math.round(cartTotal * 0.05);
   const grandTotal = cartTotal + gstAmount;

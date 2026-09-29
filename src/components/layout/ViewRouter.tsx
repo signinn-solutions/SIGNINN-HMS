@@ -26,8 +26,6 @@ import { StaffRolesView } from '../../features/settings/StaffRolesView';
 import { AuditLogView } from '../../features/settings/AuditLogView';
 import { SuperAdminView } from '../../features/superadmin/SuperAdminView';
 import { OnboardingWizard } from '../../features/onboarding/OnboardingWizard';
-import { QrRoomServiceModal } from '../../features/addons/QrRoomServiceModal';
-import { WhatsAppConciergeModal } from '../../features/addons/WhatsAppConciergeModal';
 
 // React Query Hooks
 import {
@@ -541,26 +539,7 @@ export const ViewRouter: React.FC = () => {
       return <InvoicesView invoices={invoices} />;
 
     case 'reports':
-      return <ReportsView reservations={reservations} rooms={rooms} payments={payments} />;
-
-    case 'qr-service':
-      return (
-        <QrRoomServiceModal
-          isOpen={true}
-          onClose={() => setCurrentView('dashboard')}
-          currentProperty={currentProperty}
-          rooms={rooms}
-        />
-      );
-
-    case 'whatsapp-concierge':
-      return (
-        <WhatsAppConciergeModal
-          isOpen={true}
-          onClose={() => setCurrentView('messages')}
-          currentProperty={currentProperty}
-        />
-      );
+      return <ReportsView property={currentProperty} reservations={reservations} rooms={rooms} payments={payments} />;
 
     case 'settings-property':
       return (

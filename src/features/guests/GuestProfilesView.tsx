@@ -27,6 +27,7 @@ import { Drawer } from '../../components/ui/Drawer';
 import { Modal } from '../../components/ui/Modal';
 import { useToast } from '../../components/ui/Toast';
 import { simulateLatency } from '../../services/latency';
+import { useAppStore } from '../../stores/useAppStore';
 
 export interface GuestProfilesViewProps {
   guests: Guest[];
@@ -50,6 +51,7 @@ export const GuestProfilesView: React.FC<GuestProfilesViewProps> = ({
   onMergeGuests,
 }) => {
   const { showToast } = useToast();
+  const property = useAppStore((state) => state.currentProperty);
   const [guestList, setGuestList] = useState<Guest[]>(initialGuests);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null);
@@ -583,7 +585,7 @@ export const GuestProfilesView: React.FC<GuestProfilesViewProps> = ({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-gray-700">
-                  Stay History at APKA INN ({guestStays.length} records)
+                  Stay History at {property?.name || 'the selected property'} ({guestStays.length} records)
                 </h4>
                 <span className="text-xs text-gray-500">
                   Total Spend: <strong className="text-emerald-700">{formatCurrency(selectedGuest.lifetimeRevenue)}</strong>

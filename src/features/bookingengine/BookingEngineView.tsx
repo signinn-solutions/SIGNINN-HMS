@@ -15,8 +15,8 @@ import { RoomType, Reservation } from '../../types';
 import { formatCurrency } from '../../utils/formatters';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
-import { Tabs } from '../../components/ui/Tabs';
 import { useToast } from '../../components/ui/Toast';
+import { useAppStore } from '../../stores/useAppStore';
 
 export interface BookingEngineViewProps {
   roomTypes: RoomType[];
@@ -28,16 +28,16 @@ export const BookingEngineView: React.FC<BookingEngineViewProps> = ({
   onCreateDirectBooking,
 }) => {
   const { showToast } = useToast();
-  const [activeTab, setActiveTab] = useState<'preview' | 'admin'>('preview');
+  const property = useAppStore((state) => state.currentProperty);
 
   // Booking widget form state
   const [checkIn, setCheckIn] = useState(() => new Date().toISOString().slice(0, 10));
   const [checkOut, setCheckOut] = useState(() => new Date(Date.now() + 86400000).toISOString().slice(0, 10));
   const [adults, setAdults] = useState(2);
-  const [selectedRoomTypeId, setSelectedRoomTypeId] = useState(roomTypes[0]?.id || 'rt-1');
-  const [guestName, setGuestName] = useState('Priya Sharma');
-  const [guestPhone, setGuestPhone] = useState('+91 98950 11223');
-  const [guestEmail, setGuestEmail] = useState('priya.sharma@gmail.com');
+  const [selectedRoomTypeId, setSelectedRoomTypeId] = useState(roomTypes[0]?.id || '');
+  const [guestName, setGuestName] = useState('');
+  const [guestPhone, setGuestPhone] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
   const [breakfastIncluded, setBreakfastIncluded] = useState(true);
   const [isBooked, setIsBooked] = useState(false);
   const [confirmedRef, setConfirmedRef] = useState('');
@@ -103,6 +103,10 @@ export const BookingEngineView: React.FC<BookingEngineViewProps> = ({
     }
   };
 
+  if (!selectedRoomType) {
+    return <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">Add at least one room type before accepting direct bookings.</div>;
+  }
+
   return (
     <div className="space-y-5">
       {/* Header */}
@@ -118,22 +122,13 @@ export const BookingEngineView: React.FC<BookingEngineViewProps> = ({
             </span>
           </div>
           <p className="text-xs text-gray-500 mt-1">
-            Zero-commission direct booking widget embedded on apkainn.com with instant UPI payments.
+            Zero-commission reservation form for {property?.name || 'the selected property'}.
           </p>
         </div>
 
-        <Tabs
-          variant="segmented"
-          activeTab={activeTab}
-          onChange={(t) => setActiveTab(t as any)}
-          tabs={[
-            { id: 'preview', label: 'Guest Live Preview' },
-            { id: 'admin', label: 'Widget Config' },
-          ]}
-        />
       </div>
 
-      {activeTab === 'preview' ? (
+      {
         /* Live Guest Booking Engine Frame */
         <div className="bg-gradient-to-b from-gray-50 to-white rounded-2xl border border-gray-300 p-4 sm:p-8 max-w-4xl mx-auto shadow-sm">
           {/* Guest Hotel Banner */}
@@ -143,11 +138,10 @@ export const BookingEngineView: React.FC<BookingEngineViewProps> = ({
               (Save 10%)
             </div>
             <h2 className="text-2xl font-black text-gray-950 tracking-tight font-serif">
-              APKA INN - BOUTIQUE HOTEL
+              {(property?.name || 'Selected Property').toUpperCase()}
             </h2>
             <p className="text-xs text-gray-500 mt-1">
-              Marine Drive, Kochi, Kerala • Free High-Speed WiFi • 24/7 Power Backup • Pure Vegetarian
-              Kitchen
+              {property?.address || 'Property address is not configured'}
             </p>
           </div>
 
@@ -331,7 +325,7 @@ export const BookingEngineView: React.FC<BookingEngineViewProps> = ({
               </div>
               <h3 className="text-xl font-bold text-gray-950">Booking Confirmed!</h3>
               <p className="text-xs text-gray-600">
-                Your reservation at APKA INN has been saved for <strong>{guestEmail}</strong>.
+                Your reservation at {property?.name || 'the selected property'} has been saved for <strong>{guestEmail}</strong>.
               </p>
 
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 text-xs text-left space-y-1.5">
@@ -361,47 +355,7 @@ export const BookingEngineView: React.FC<BookingEngineViewProps> = ({
             </div>
           )}
         </div>
-      ) : (
-        /* Admin Configuration View */
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-2xs max-w-2xl mx-auto space-y-4 text-xs">
-          <h3 className="text-sm font-bold text-gray-900">Direct Engine Customization</h3>
-          <p className="text-gray-500">
-            Configure the embeddable direct reservation widget on your hotel website.
-          </p>
-
-          <div className="space-y-3">
-            <div>
-              <label className="font-bold text-gray-700 block mb-1">Direct Incentive Discount (%)</label>
-              <input
-                type="number"
-                defaultValue={10}
-                className="w-full h-8 px-3 rounded-lg border border-gray-300 font-bold"
-              />
-              <span className="text-[11px] text-gray-400">
-                Promote direct bookings with guaranteed discount vs OTA commission.
-              </span>
-            </div>
-
-            <div>
-              <label className="font-bold text-gray-700 block mb-1">Hotel Contact WhatsApp</label>
-              <input
-                type="text"
-                defaultValue="+91 484 235 6789"
-                className="w-full h-8 px-3 rounded-lg border border-gray-300 font-mono"
-              />
-            </div>
-
-            <div>
-              <label className="font-bold text-gray-700 block mb-1">VPA / Merchant UPI ID</label>
-              <input
-                type="text"
-                defaultValue="apkainn@hdfcbank"
-                className="w-full h-8 px-3 rounded-lg border border-gray-300 font-mono"
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      }
     </div>
   );
 };
