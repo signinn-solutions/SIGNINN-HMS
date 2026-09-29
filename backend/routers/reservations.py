@@ -1,6 +1,6 @@
 import random
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, date
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from backend.database import get_db
@@ -75,6 +75,40 @@ def create_reservation(
         prop = db.query(Property).filter(Property.tenant_id == tenant_id).first()
         prop_id = prop.id if prop else "prop-1"
 
+    try:
+        arrival = date.fromisoformat(res_in.check_in_date)
+        departure = date.fromisoformat(res_in.check_out_date)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Stay dates must use YYYY-MM-DD")
+    if departure <= arrival:
+        raise HTTPException(status_code=422, detail="Check-out must be after check-in")
+    if res_in.nights != (departure - arrival).days:
+        raise HTTPException(status_code=422, detail="Night count does not match stay dates")
+    if not db.query(Property).filter(Property.id == prop_id, Property.tenant_id == tenant_id).first():
+        raise HTTPException(status_code=404, detail="Property not found")
+
+    # Assign a room with no overlapping live reservation in this property and category.
+    occupied_room_ids = db.query(Reservation.room_id).filter(
+        Reservation.tenant_id == tenant_id,
+        Reservation.property_id == prop_id,
+        Reservation.status.notin_(["Cancelled", "Checked Out"]),
+        Reservation.check_in_date < res_in.check_out_date,
+        Reservation.check_out_date > res_in.check_in_date,
+        Reservation.room_id.isnot(None),
+    )
+    candidates = db.query(Room).filter(
+        Room.tenant_id == tenant_id,
+        Room.property_id == prop_id,
+        Room.room_type_id == res_in.room_type_id,
+        Room.maintenance_status == "Operational",
+        ~Room.id.in_(occupied_room_ids),
+    )
+    if res_in.room_id:
+        candidates = candidates.filter(Room.id == res_in.room_id)
+    room = candidates.order_by(Room.room_number).with_for_update().first()
+    if not room:
+        raise HTTPException(status_code=409, detail="No free room of this type for the selected dates")
+
     # 2. Resolve or create Guest
     guest_id = res_in.guest_id
     guest = None
@@ -116,8 +150,8 @@ def create_reservation(
         property_id=prop_id,
         ref_code=ref_code,
         guest_id=guest.id if guest else "gst-temp",
-        room_id=res_in.room_id,
-        room_number=res_in.room_number,
+        room_id=room.id,
+        room_number=room.room_number,
         room_type_id=res_in.room_type_id,
         room_type_name=res_in.room_type_name or "Standard Room",
         check_in_date=res_in.check_in_date,
@@ -139,14 +173,17 @@ def create_reservation(
     db.add(new_res)
 
     # If reservation was created directly in 'Checked In' state (e.g. Walk-In), immediately occupy room
-    if new_res.status == "Checked In" and res_in.room_id:
-        room = db.query(Room).filter(Room.id == res_in.room_id, Room.tenant_id == tenant_id).first()
-        if room:
-            room.occupancy_status = "Occupied"
-            room.current_reservation_id = new_res.id
-            room.current_guest_name = guest_name
-            room.key_card_assigned = True
-            new_res.room_number = room.room_number
+    if new_res.status == "Checked In":
+        room.occupancy_status = "Occupied"
+        room.current_reservation_id = new_res.id
+        room.current_guest_name = guest_name
+        room.key_card_assigned = True
+    elif arrival == date.today() and room.occupancy_status == "Vacant":
+        room.occupancy_status = "Reserved"
+        room.current_reservation_id = new_res.id
+        room.current_guest_name = guest_name
+    elif arrival > date.today():
+        room.next_arrival_date = min(room.next_arrival_date or res_in.check_in_date, res_in.check_in_date)
 
     db.commit()
 
@@ -158,7 +195,7 @@ def create_reservation(
         reservation_id=res_id,
         reservation_ref=ref_code,
         guest_name=guest_name,
-        room_number=res_in.room_number,
+        room_number=room.room_number,
         total_charges=res_in.total_amount,
         total_payments=res_in.paid_amount,
         total_taxes=res_in.total_amount * 0.12,
